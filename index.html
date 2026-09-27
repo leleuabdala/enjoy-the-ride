@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="etr-revision" content="6">
+<title>Enjoy the Ride · Revisão 6</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700;9..144,900&family=Karla:wght@400;500;700&family=Courier+Prime:wght@400;700&display=swap">
+<link rel="stylesheet" href="/src/style.css">
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="rough" x="-20%" y="-20%" width="140%" height="140%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="3" seed="6" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="1.7" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+  <defs>
+    <g id="i-for"><path d="M4 14h20M5 9.5v9M23 9.5v9M9 11v6M19 11v6"/></g>
+    <g id="i-vit"><path d="M14 10.2c-4.2-3.2-9.4.5-8.4 6.3.7 4 4.2 8.4 6.3 8.4.9 0 1.4-.5 2.1-.5s1.2.5 2.1.5c2.1 0 5.6-4.4 6.3-8.4 1-5.8-4.2-9.5-8.4-6.3z"/><path d="M14 10.2V6.4"/><path d="M14 7c2.6-.3 3.8-1.7 3.8-3.4-2 0-3.5 1.3-3.8 3.4z"/></g>
+    <g id="i-per"><path d="M2.5 14S7 7.8 14 7.8 25.5 14 25.5 14 21 20.2 14 20.2 2.5 14 2.5 14z"/><circle cx="14" cy="14" r="3.4"/></g>
+    <g id="i-men"><path d="M4 7.2c3.6-1.5 6.6-1.4 10 .7 3.4-2.1 6.4-2.2 10-.7v13c-3.6-1.5-6.6-1.4-10 .7-3.4-2.1-6.4-2.2-10-.7z"/><path d="M14 7.9v13"/></g>
+    <g id="i-vin"><path d="M14 23.2C9.4 19.6 4.2 16.4 4.2 11.4c0-3 2.4-5.2 5.1-5.2 2 0 3.7 1.1 4.7 2.9 1-1.8 2.7-2.9 4.7-2.9 2.7 0 5.1 2.2 5.1 5.2 0 5-5.2 8.2-9.8 11.8z"/></g>
+    <g id="i-cook"><path d="M5 12.5h18v6.8a4 4 0 0 1-4 4h-10a4 4 0 0 1-4-4z"/><path d="M2.8 12.5h22.4"/><path d="M11 9c0-1.9 2-2.1 2-4.4M17 9c0-1.9 2-2.1 2-4.4"/></g>
+    <g id="i-read"><path d="M4 6.6c3.4-1.4 6.4-1.3 10 .7 3.6-2 6.6-2.1 10-.7v13.6c-3.4-1.4-6.4-1.3-10 .7-3.6-2-6.6-2.1-10-.7z"/><path d="M14 7.3v13.6"/><path d="M7 10.5h4M17 10.5h4M7 14h4M17 14h4"/></g>
+    <g id="i-well"><path d="M14 4.5v5M14 18.5v5M4.5 14h5M18.5 14h5M7.3 7.3l3.5 3.5M17.2 17.2l3.5 3.5M20.7 7.3l-3.5 3.5M10.8 17.2l-3.5 3.5"/><circle cx="14" cy="14" r="3.2"/></g>
+    <g id="i-check"><path d="M7 4.2h10.5l4.5 4.5v15.1H7z"/><path d="M17.5 4.2v4.5H22"/><path d="M11 15.4l2.9 2.8 5.2-5.6"/></g>
+    <g id="i-date"><path d="M6 8.5h16v14H6z"/><path d="M6 12.5h16"/><path d="M10 5.5v5M18 5.5v5"/><path d="M14 19.4c-2.2-1.7-4.6-3.2-4.6-5.5"/><path d="M14 19.4c2.2-1.7 4.6-3.2 4.6-5.5"/></g>
+  </defs>
+</svg>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <g id="i-gold"><circle cx="12" cy="12" r="8.4" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="4.6" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M12 8.6v6.8M9.4 10.4h5.2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></g>
+</defs></svg>
+
+<div class="wrap">
+  <div class="masthead">
+    <div class="logo">Enjoy the Ride<em>.</em></div>
+    <span class="revision">Revisão 6</span>
+    <div class="date" id="today-str">—</div>
+  </div>
+
+  <div class="hero">
+    <button type="button" class="companion-button" id="open-avatar" aria-controls="tab-armario" aria-expanded="false" aria-label="Abrir personagem: cachorrinho aventureiro">
+      <span id="avatar-mini"></span>
+      <span class="companion-hint">Personagem ↗</span>
+    </button>
+    <div>
+      <h1>Gabriel Abdala</h1>
+      <p class="arc" id="arc">Semana 1 de 12 · <b>Recuperando o senso de segurança</b></p>
+      <div class="tallies">
+        <div class="tally">Nível total <b id="c-lvl">5</b></div>
+        <div class="tally hot"><svg viewBox="0 0 24 24"><use href="#i-gold"/></svg><b id="c-gold">0</b></div>
+        <div class="tally off" id="c-streak">Sequência 0 dias</div>
+        <div class="tally">Rank <b id="rank-letter">E</b></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="gate">
+    <div><div class="lab">Próximo portão</div><div class="val" id="gate-txt">—</div></div>
+    <div class="grow"><i id="gate-bar" style="width:0%"></i></div>
+  </div>
+
+  <div class="tabs" role="tablist">
+    <button role="tab" aria-selected="true" data-tab="hoje">Hoje</button>
+    <button role="tab" aria-selected="false" data-tab="semana">Semana</button>
+    <button role="tab" aria-selected="false" data-tab="escrita">Escrita</button>
+    <button role="tab" aria-selected="false" data-tab="loja">Loja</button>
+    <button role="tab" aria-selected="false" data-tab="armario">Personagem</button>
+    <button role="tab" aria-selected="false" data-tab="registro">Registro</button>
+  </div>
+
+  <section class="sec" id="big-sec" style="margin-top:22px">
+    <div class="sec-h"><h2>As três cartas da semana</h2><div class="note" id="big-tag">0 de 3</div></div>
+    <p class="sec-sub">O app tira três, uma de cada frente. Você não escolhe antes e não precisa fazer as três — uma já vale a semana. Duas pagam mais, três pagam muito mais. Nenhuma tira nada se ficar em branco.</p>
+    <div class="hr"></div>
+    <div class="cards" id="cards"></div>
+  </section>
+
+
+  <div id="tab-hoje">
+    <section class="sec">
+      <div class="sec-h"><h2>Suas missões de hoje</h2><div class="note" id="daily-count">0 / 5</div></div>
+      <p class="sec-sub">Marque o quadrado quando cumprir a missão. As três bolinhas embaixo são os <b>extras</b>: fez além do combinado, marque uma, <code>+5 XP</code>. Clicar de novo tira qualquer uma das duas.</p>
+      <div class="hr"></div>
+      <div id="attrs"></div>
+    </section>
+
+    <section class="sec">
+      <div class="sec-h"><h2>Bônus do dia</h2><div class="note">opcional, nunca cobrado</div></div>
+      <p class="sec-sub">Nada aqui é obrigação e nada aqui gera penalidade. São as coisas que só contam quando acontecem.</p>
+      <div class="hr"></div>
+      <div id="bonus"></div>
+    </section>
+
+    <section class="sec">
+      <div class="sec-h"><h2>Como o sistema conta</h2></div>
+      <div class="hr"></div>
+      <div class="rules">
+        <b>Missão diária.</b> Uma por atributo. Cumprir dá <code>+10 XP</code> e <code>+5 ouro</code>. As cinco no mesmo dia: <code>+25 ouro</code> e a sequência avança.<br>
+        <b>Extra.</b> Três bolinhas por atributo, <code>+5 XP</code> cada, pra quando você faz além do combinado.<br>
+        <b>Bônus do dia.</b> Cozinhar algo que você nunca fez, ler, e encher o poço. Pagam bem e não cobram nada.<br>
+        <b>Rituais da semana.</b> O encontro com a Gi vale <code>+30 XP</code> e <code>+60 ouro</code>; a checagem de segunda, <code>+15 XP</code> e <code>+25 ouro</code>; planejar as jantas, <code>+20 ouro</code>.<br>
+        <b>Penalidade.</b> Virou o dia com missão em aberto: <code>−6 XP</code> nela e a sequência zera.<br>
+        <b>Folga.</b> Um dia por semana não gera penalidade nenhuma. O sistema aplica sozinho no seu pior dia — o fim de semana faz parte do plano, não é a falha dele.<br>
+        <b>Decaimento.</b> Atributo parado há 3 dias ou mais perde <code>−4 XP</code> por dia.<br>
+        <b>Portão de rank.</b> O rank é o do seu atributo <b>mais fraco</b>. <code>D</code> pede nível 5 em tudo, <code>C</code> nível 10, <code>B</code> nível 18, <code>A</code> nível 28, <code>S</code> nível 40.
+        <div class="cite">As páginas matinais, a checagem semanal e as doze semanas vêm de <i>O Caminho do Artista</i>, de Julia Cameron — adaptadas ao seu tamanho, não copiadas.</div>
+      </div>
+    </section>
+  </div>
+
+  <div id="tab-semana" hidden>
+    <section class="sec">
+      <div class="sec-h"><h2>Rituais da semana</h2><div class="note" id="week-tag">semana 1</div></div>
+      <div class="hr"></div>
+      <div class="block">
+        <div class="ico"><svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><use href="#i-date"/></svg></div>
+        <div>
+          <h3>Encontro com a Gi</h3>
+          <p>Não é o dia normal de vocês — é um degrau acima. Marcado com antecedência, pensado, alguma coisa que ela vai lembrar na semana seguinte. O diário mantém a chama acesa; isto aqui é jogar lenha.</p>
+          <span class="pay">+30 vínculo · +60 ouro</span>
+          <input class="field" id="ad-note" placeholder="O que vocês fizeram?" maxlength="160">
+        </div>
+        <button class="mark" id="ad-check" aria-pressed="false" aria-label="Marcar encontro com a Gi">
+          <svg viewBox="0 0 24 24"><polyline points="4,12.5 9.5,18 20,6"></polyline></svg></button>
+      </div>
+      <div class="block">
+        <div class="ico"><svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><use href="#i-check"/></svg></div>
+        <div>
+          <h3>Checagem de segunda</h3>
+          <p>Vinte minutos olhando pra trás. Se você esqueceu de marcar alguma coisa durante a semana, é aqui que você conserta — volte na aba Hoje e marque, o sistema aceita.</p>
+          <span class="pay">+15 mente · +25 ouro</span>
+          <label class="qlab">1. Quantos dias de páginas matinais? <span id="ci-auto"></span></label>
+          <textarea class="field" id="ci-a" rows="2" placeholder="Como foi a experiência?"></textarea>
+          <label class="qlab">2. O que você fez de entrada criativa?</label>
+          <textarea class="field" id="ci-b" rows="2" placeholder="O que você olhou, leu, ouviu. E o que ficou."></textarea>
+          <label class="qlab">3. Aconteceu algo significativo?</label>
+          <textarea class="field" id="ci-c" rows="2" placeholder="Descobertas, coincidências, o que mudou."></textarea>
+        </div>
+        <button class="mark" id="ci-check" aria-pressed="false" aria-label="Fechar checagem da semana">
+          <svg viewBox="0 0 24 24"><polyline points="4,12.5 9.5,18 20,6"></polyline></svg></button>
+      </div>
+    </section>
+
+    <section class="sec">
+      <div class="sec-h"><h2>O prato diferente da semana</h2><div class="note" id="dish-tag">—</div></div>
+      <p class="sec-sub">Em duas partes, de propósito. Decidir já é meio caminho e já paga — num dia sem energia, escolher o prato é a vitória do dia. Fazer paga o resto.</p>
+      <div class="hr"></div>
+      <div class="block">
+        <div class="ico"><svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><use href="#i-cook"/></svg></div>
+        <div>
+          <h3>Escolher</h3>
+          <p>Uma coisa que você nunca fez: receita nova, técnica nova, um ingrediente que você nunca comprou. Escreve aqui e marca — pronto, ganhou.</p>
+          <span class="pay">+15 ouro</span>
+          <input class="field" id="dish-name" placeholder="Qual vai ser o prato?" maxlength="90">
+        </div>
+        <button class="mark" id="dish-pick" aria-pressed="false" aria-label="Escolhi o prato da semana">
+          <svg viewBox="0 0 24 24"><polyline points="4,12.5 9.5,18 20,6"></polyline></svg></button>
+      </div>
+      <div class="block">
+        <div class="ico"><svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><use href="#i-well"/></svg></div>
+        <div>
+          <h3>Fazer</h3>
+          <p>Qualquer dia da semana. Deu errado e ficou intragável? Conta igual — a tentativa é o ponto.</p>
+          <span class="pay">+8 vitalidade · +5 percepção · +30 ouro</span>
+        </div>
+        <button class="mark" id="dish-do" aria-pressed="false" aria-label="Fiz o prato da semana">
+          <svg viewBox="0 0 24 24"><polyline points="4,12.5 9.5,18 20,6"></polyline></svg></button>
+      </div>
+    </section>
+
+    <section class="sec">
+      <div class="sec-h"><h2>As jantas da semana</h2><div class="note" id="meal-tag">0 / 5</div></div>
+      <p class="sec-sub">Preencha no domingo. Decidir antes é o que faz a missão de Vitalidade virar "comi o que planejei" em vez de "comi certo" — churrasco planejado conta como cumprido.</p>
+      <div class="hr"></div>
+      <div class="meals" id="meals"></div>
+      <div style="margin-top:16px"><button class="btn solid" id="meal-save">Fechar o plano (+20 ouro)</button></div>
+    </section>
+
+    <section class="sec">
+      <div class="sec-h"><h2>A jornada</h2><div class="note" id="journey-tag">— / 12</div></div>
+      <div class="hr"></div>
+      <div class="weeks" id="weeks"></div>
+    </section>
+  </div>
+
+  <div id="tab-escrita" hidden>
+    <section class="sec">
+      <div class="sec-h"><h2>Páginas matinais</h2><div class="note" id="write-date">—</div></div>
+      <p class="sec-sub">Fluxo contínuo. Não releia, não edite, não julgue — se não vier nada, escreva que não vem nada até encher.</p>
+      <div id="write-live">
+        <div class="modes" role="group" aria-label="Modo de escrita">
+          <button id="m-key" aria-pressed="true">Teclado</button>
+          <button id="m-pen" aria-pressed="false">Caneta</button>
+        </div>
+        <div id="mode-key">
+          <textarea class="pad" id="pad" placeholder="Escreva sem parar. Não releia."></textarea>
+          <div class="pad-foot">
+            <div class="wc" id="wc"><b>0</b> / 750 palavras</div>
+            <div class="wprog"><i id="wbar" style="width:0%"></i></div>
+            <label class="wc" style="display:flex;gap:8px;align-items:center">meta
+              <input id="wgoal" class="numin" type="number" min="100" max="2000" step="50" value="750"></label>
+            <span class="wc" id="saved">salvo</span>
+          </div>
+        </div>
+        <div id="mode-pen" hidden>
+          <div class="sheet">
+            <canvas id="sheet" aria-label="Folha para escrever à mão"></canvas>
+            <div class="lines"></div><div class="marg"></div>
+          </div>
+          <div class="penbar">
+            <div class="pagedots" id="pagedots"></div>
+            <button class="btn quiet" id="p-undo">Desfazer</button>
+            <button class="btn quiet" id="p-clear">Limpar página</button>
+            <label class="pentog"><input type="checkbox" id="p-only"> só Apple Pencil</label>
+            <span class="wc" id="p-saved">salvo</span>
+          </div>
+          <p class="penstat" id="p-stat">folha: — · entrada: nenhuma ainda · traços: 0</p>
+        </div>
+        <div style="margin-top:20px"><button class="btn solid" id="write-close">Fechar as páginas de hoje</button></div>
+      </div>
+      <div id="write-done" class="closed" hidden>
+        <h3>Páginas fechadas.</h3>
+        <p id="write-done-sub">Arquivado. Amanhã tem folha nova.</p>
+        <div style="margin-top:16px"><button class="btn quiet" id="write-reopen">Reabrir</button></div>
+      </div>
+    </section>
+    <section class="sec">
+      <div class="sec-h"><h2>Arquivo</h2><div class="note" id="arch-tag">—</div></div>
+      <div class="hr"></div>
+      <div id="seal-note" class="seal-note" hidden><b>Arquivo selado.</b> O livro pede que você não releia nas primeiras oito semanas — na Semana 9 a tarefa é reler tudo de uma vez, com duas canetas: uma para descobertas, outra para ações. O selo abre sozinho lá.</div>
+      <div class="entries" id="entries"><p class="muted" style="margin:0">Nada arquivado ainda.</p></div>
+    </section>
+  </div>
+
+  <div id="tab-armario" hidden>
+    <section class="sec" aria-labelledby="avatar-heading">
+      <div class="sec-h"><h2 id="avatar-heading" tabindex="-1">Seu companheiro</h2><div class="note" id="avatar-count">0 conquistas</div></div>
+      <p class="sec-sub">Um cachorrinho, muitas jornadas. Uma nova peça a cada 8 conquistas. A arma chega por último; a próxima classe vem depois.</p>
+      <div class="hr"></div>
+      <div class="avatar-roadmap" id="avatar-roadmap" aria-label="Sequência de classes"></div>
+      <div class="avatar-layout">
+        <div class="avatar-stage" id="avatar-art" role="img" aria-label="Cachorrinho aventureiro"></div>
+        <div>
+          <div class="avatar-caption accent" id="avatar-tier">Em formação · terracota</div>
+          <div class="avatar-status" id="avatar-status">Pequeno aventureiro</div>
+          <p class="avatar-equipped-note" id="avatar-equipped-note"></p>
+          <div class="avatar-training" id="avatar-training">Em evolução · Soldado</div>
+          <div class="avatar-progress" id="avatar-meter" role="progressbar" aria-label="Progresso até a próxima peça" aria-valuemin="0" aria-valuemax="8" aria-valuenow="0"><i id="avatar-bar"></i></div>
+          <p class="avatar-next" id="avatar-next"></p>
+          <ol class="avatar-steps" id="avatar-steps" aria-label="Peças desta classe"></ol>
+        </div>
+      </div>
+      <div class="sec-h"><h3>Armário</h3><span class="avatar-caption">Suas jornadas ficam aqui</span></div>
+      <div class="wardrobe" id="wardrobe"></div>
+      <p class="avatar-next" id="wardrobe-empty">Complete o primeiro conjunto para guardá-lo aqui. Depois, você pode vestir suas classes favoritas.</p>
+      <p class="avatar-rules">Cada missão, extra, bônus ou atividade semanal marcada conta uma vez. Desmarcar retira o progresso e pode recolher peças ou conjuntos liberados por ele. Marcar novamente apenas devolve esse mesmo progresso. Conquistas de dias anteriores continuam valendo. São 7 melhorias por classe. As próximas jornadas revisitam as classes com um novo número no armário.</p>
+    </section>
+  </div>
+
+  <div id="tab-loja" hidden>
+    <section class="sec">
+      <div class="sec-h"><h2>Loja</h2><div class="note" id="shop-gold">0 ouro</div></div>
+      <p class="sec-sub">Ouro só vale se comprar algo que você realmente quer. As de comida são caras de propósito: evento, não rotina.</p>
+      <div class="shop" id="shop"></div>
+      <div class="addrow">
+        <input type="text" id="r-name" placeholder="Nova recompensa" maxlength="60">
+        <input type="number" id="r-cost" placeholder="custo" min="10" max="9999" step="10">
+        <button class="btn solid" id="r-add">Adicionar</button>
+      </div>
+    </section>
+    <section class="sec">
+      <div class="sec-h"><h2>O baralho</h2><div class="note">cartas da coisa grande</div></div>
+      <p class="sec-sub">Você não escolhe a recompensa da coisa grande — o app sorteia daqui. Descarte o que não te anima e coloque o que anima.</p>
+      <div class="hr"></div>
+      <div class="shop" id="deck"></div>
+      <div class="addrow">
+        <input type="text" id="d-name" placeholder="Nova carta" maxlength="70">
+        <button class="btn solid" id="d-add">Adicionar</button>
+      </div>
+    </section>
+  </div>
+
+  <div id="tab-registro" hidden>
+    <section class="sec">
+      <div class="sec-h"><h2>Últimos 90 dias</h2><div class="note" id="log-tag">—</div></div>
+      <div class="hr"></div>
+      <div class="heat" id="heat"></div>
+      <div class="legend">
+        <span><i style="border:1px solid var(--rule)"></i> sem registro</span>
+        <span><i style="background:#F79B63"></i> parcial</span>
+        <span><i style="background:var(--orange)"></i> dia cheio</span>
+        <span><i style="background:var(--paper-2);border:1px solid var(--ink-faint)"></i> folga</span>
+        <span><i style="background:var(--ink)"></i> penalidade</span>
+      </div>
+    </section>
+    <section class="sec">
+      <div class="sec-h"><h2>Resgates</h2></div>
+      <div class="hr"></div>
+      <div class="ledger" id="ledger"><p class="muted" style="margin:0">Nenhum resgate ainda.</p></div>
+    </section>
+  </div>
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>
