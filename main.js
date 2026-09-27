@@ -1,3 +1,4 @@
+import { supabase } from './supabase-client.js'
 
 (function(){
 "use strict";
@@ -112,7 +113,29 @@ function fresh(){
         {id:"c7",t:"Um dia inteiro sem abrir este app. Folga total, sem penalidade."},
         {id:"c8",t:"Aquele stand-up que você queria ver. Compra o ingresso hoje."}]};
 }
-var S=fresh(),DB=null,DOC=null,saveTimer=null,padTimer=null,fieldTimer=null,BOOTED=false,TOUCHED=false;
+var S=fresh(),saveTimer=null,padTimer=null,fieldTimer=null,BOOTED=false,TOUCHED=false,CLOUD_USER=null,CLOUD_BASE=null,CLOUD_PURCHASES=0;
+function xpTotal(a){var n=0;for(var l=1;l<a.lvl;l++)n+=need(l);return n+a.xp}
+function cloudSnapshot(){var x={gold:S.gold,attrs:{}};ATTRS.forEach(function(a){x.attrs[a.k]=xpTotal(S.attrs[a.k])});return x}
+function weekStart(){return mondayOf(S.day.date||today())}
+function dayStatus(){if(S.history[S.day.date]==="f")return "free_day";if(S.history[S.day.date]==="x")return "missed";if(doneCount()===ATTRS.length)return "complete";return "active"}
+function cloudRows(){
+ var uid=CLOUD_USER.id,prefs={shop:S.shop,deck:S.deck,unsealed:S.unsealed};
+ return {
+  profile:{user_id:uid,display_name:"Gabriel Abdala",journey_start:S.start,word_goal:S.goal,write_mode:S.writeMode,equipped_character:S.avatar.equipped,preferences:prefs},
+  day:{user_id:uid,entry_date:S.day.date,done:S.day.done,extra:S.day.extra,bonus:S.day.bonus,bonus_notes:S.day.bonusNote,read_attr:S.day.readAttr,counted:S.day.counted,closed:S.day.closed,day_status:dayStatus()},
+  journal:{user_id:uid,entry_date:S.day.date,week_number:S.week.n,mode:S.writeMode,text_content:S.day.text||null,word_count:words(S.day.text||""),closed:S.day.closed,closed_at:S.day.closed?new Date().toISOString():null},
+  week:{user_id:uid,week_number:S.week.n,week_start:weekStart(),encounter_done:S.week.ad,encounter_note:S.week.adNote,checkin:S.week.ci,checkin_done:S.week.ciDone,wrote:S.week.wrote,cards:S.week.cards,card_plan:S.week.cardPlan,card_done:S.week.cardDone,prize_drawn:S.week.prized,dish:S.week.dish,dish_picked:S.week.dishPicked,dish_done:S.week.dishDone,meals:S.week.meals,meals_done:S.week.mealsDone,free_day_used:S.week.folga},
+  progress:{user_id:uid,attrs:S.attrs,gold:S.gold,current_streak:S.streak,best_streak:S.best,avatar_marks:S.avatar.marks,avatar_points:S.avatar.points,avatar_seen:S.avatar.seen,unlocked:S.unsealed}
+ };
+}
+async function persistCloud(){
+ if(!CLOUD_USER)return;var r=cloudRows(),before=CLOUD_BASE,after=cloudSnapshot();
+ var jobs=[supabase.from("profiles").upsert(r.profile),supabase.from("daily_entries").upsert(r.day,{onConflict:"user_id,entry_date"}),supabase.from("journal_entries").upsert(r.journal,{onConflict:"user_id,entry_date"}),supabase.from("weekly_entries").upsert(r.week,{onConflict:"user_id,week_number"}),supabase.from("user_progress").upsert(r.progress)];
+ var newPurchases=Math.max(0,S.purchases.length-CLOUD_PURCHASES);
+ if(newPurchases){jobs.push(supabase.from("purchases").insert(S.purchases.slice(0,newPurchases).map(function(p){return {user_id:CLOUD_USER.id,reward_name:p.name,gold_cost:p.cost,purchased_at:(p.date||today())+"T12:00:00-03:00"}})))}
+ if(before){var events=[];ATTRS.forEach(function(a){var d=after.attrs[a.k]-(before.attrs[a.k]||0);if(d)events.push({user_id:CLOUD_USER.id,event_type:"state_change",event_date:today(),attribute_key:a.k,xp_delta:d,gold_delta:0,source_type:"app_state",metadata:{revision:6}})});var gd=after.gold-before.gold;if(gd)events.push({user_id:CLOUD_USER.id,event_type:"state_change",event_date:today(),xp_delta:0,gold_delta:gd,source_type:"app_state",metadata:{revision:6}});if(events.length)jobs.push(supabase.from("progress_events").insert(events))}
+ var results=await Promise.all(jobs),failed=results.find(function(x){return x.error});if(failed)throw failed.error;CLOUD_BASE=after;CLOUD_PURCHASES=S.purchases.length;
+}
 
 function attrOf(k){for(var i=0;i<ATTRS.length;i++)if(ATTRS[i].k===k)return ATTRS[i];return ATTRS[0]}
 function addXp(k,amt){var a=S.attrs[k];if(!a)return;a.xp+=amt;
@@ -129,8 +152,7 @@ function mealsFilled(){return S.week.meals.filter(function(m){return m&&m.trim()
 function closeWeek(rep){
  if(!S.week.ad){addXp("vin",-PEN_AD);rep.losses.vin=(rep.losses.vin||0)+PEN_AD;rep.ad=true}
  if(!S.week.ciDone){addXp("men",-PEN_CI);rep.losses.men=(rep.losses.men||0)+PEN_CI;rep.ci=true}
- if(DB){try{DB.doc("weeks/w"+S.week.n).set({n:S.week.n,ad:S.week.ad,adNote:S.week.adNote,ci:S.week.ci,
-  ciDone:S.week.ciDone,wrote:S.week.wrote,obt:S.week.obt,obtDone:S.week.obtDone,meals:S.week.meals}).catch(function(){})}catch(e){}}
+ if(CLOUD_USER)persistCloud().catch(function(e){console.error(e)})
 }
 function newWeek(n){return {n:n,ad:false,adNote:"",ci:{a:"",b:"",c:""},ciDone:false,wrote:0,
  cards:dealCards(n),cardPlan:{},cardDone:{},prized:false,
@@ -192,10 +214,10 @@ function localSave(){try{localStorage.setItem("etr.v3",JSON.stringify(S))}catch(
 function localLoad(){try{var r=localStorage.getItem("etr.v3");return r?JSON.parse(r):null}catch(e){return null}}
 function save(){
  S.updatedAt=Date.now();TOUCHED=true;localSave();
- if(!DOC)return;clearTimeout(saveTimer);
- saveTimer=setTimeout(function(){DOC.set(JSON.parse(JSON.stringify(S))).catch(function(){})},500);
+ if(!CLOUD_USER)return;clearTimeout(saveTimer);
+ saveTimer=setTimeout(function(){persistCloud().catch(function(e){console.error("Falha ao salvar no Supabase",e)})},500);
 }
-function archiveDay(a){if(DB&&a){DB.doc("days/"+a.date).set({date:a.date,text:a.text,words:a.words,week:a.week||1}).catch(function(){})}}
+function archiveDay(a){if(CLOUD_USER&&a)supabase.from("journal_entries").upsert({user_id:CLOUD_USER.id,entry_date:a.date,week_number:a.week||1,mode:"key",text_content:a.text||null,word_count:a.words||0,closed:true,closed_at:new Date().toISOString()},{onConflict:"user_id,entry_date"}).then(function(r){if(r.error)console.error(r.error)})}
 function merge(L){
  if(!L||typeof L!=="object")return;
  var b=fresh();
@@ -713,7 +735,7 @@ var PEN=(function(){
  function flush(){
   if(!dirty)return;dirty=false;saveLocal();
   var s=el("p-saved");if(s)s.textContent="salvo";
-  if(DB)DB.doc("days/"+myDate).set({date:myDate,mode:"pen",pages:pages,week:S.week.n,words:0,full:fullCount()}).catch(function(){});
+  if(CLOUD_USER)supabase.from("journal_entries").upsert({user_id:CLOUD_USER.id,entry_date:myDate,week_number:S.week.n,mode:"pen",pen_pages:pages,word_count:0,closed:S.day.closed},{onConflict:"user_id,entry_date"}).then(function(r){if(r.error)console.error(r.error)});
  }
  function touch(){dirty=true;var s=el("p-saved");if(s)s.textContent="salvando…";clearTimeout(tmr);tmr=setTimeout(flush,1400)}
  function stat(){var s=el("p-stat");if(!s)return;
