@@ -131,7 +131,7 @@ function cloudRows(){
 async function persistCloud(){
  if(!CLOUD_USER)return;var r=cloudRows(),before=CLOUD_BASE,after=cloudSnapshot();
  var jobs=[supabase.from("profiles").upsert(r.profile),supabase.from("daily_entries").upsert(r.day,{onConflict:"user_id,entry_date"}),supabase.from("journal_entries").upsert(r.journal,{onConflict:"user_id,entry_date"}),supabase.from("weekly_entries").upsert(r.week,{onConflict:"user_id,week_number"}),supabase.from("user_progress").upsert(r.progress)];
- var hist=Object.keys(S.history).filter(function(date){return date!==S.day.date}).map(function(date){var v=S.history[date],done={};if(typeof v==="number"&&v>0){for(var i=0;i<Math.min(v,ATTRS.length);i++)done[ATTRS[i].k]=true}return {user_id:CLOUD_USER.id,entry_date:date,done:done,day_status:v==="f"?"free_day":v==="x"?"missed":v===ATTRS.length?"complete":"active"}});
+ var hist=Object.keys(S.history).filter(function(date){return date!==S.day.date}).map(function(date){var v=S.history[date];return {user_id:CLOUD_USER.id,entry_date:date,day_status:v==="f"?"free_day":v==="x"?"missed":v===ATTRS.length?"complete":"active"}});
  if(hist.length)jobs.push(supabase.from("daily_entries").upsert(hist,{onConflict:"user_id,entry_date"}));
  var newPurchases=Math.max(0,S.purchases.length-CLOUD_PURCHASES);
  if(newPurchases){jobs.push(supabase.from("purchases").insert(S.purchases.slice(0,newPurchases).map(function(p){return {user_id:CLOUD_USER.id,reward_name:p.name,gold_cost:p.cost,purchased_at:(p.date||today())+"T12:00:00-03:00"}})))}
