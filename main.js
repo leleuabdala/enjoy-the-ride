@@ -131,6 +131,8 @@ function cloudRows(){
 async function persistCloud(){
  if(!CLOUD_USER)return;var r=cloudRows(),before=CLOUD_BASE,after=cloudSnapshot();
  var jobs=[supabase.from("profiles").upsert(r.profile),supabase.from("daily_entries").upsert(r.day,{onConflict:"user_id,entry_date"}),supabase.from("journal_entries").upsert(r.journal,{onConflict:"user_id,entry_date"}),supabase.from("weekly_entries").upsert(r.week,{onConflict:"user_id,week_number"}),supabase.from("user_progress").upsert(r.progress)];
+ var hist=Object.keys(S.history).filter(function(date){return date!==S.day.date}).map(function(date){var v=S.history[date],done={};if(typeof v==="number"&&v>0){for(var i=0;i<Math.min(v,ATTRS.length);i++)done[ATTRS[i].k]=true}return {user_id:CLOUD_USER.id,entry_date:date,done:done,day_status:v==="f"?"free_day":v==="x"?"missed":v===ATTRS.length?"complete":"active"}});
+ if(hist.length)jobs.push(supabase.from("daily_entries").upsert(hist,{onConflict:"user_id,entry_date"}));
  var newPurchases=Math.max(0,S.purchases.length-CLOUD_PURCHASES);
  if(newPurchases){jobs.push(supabase.from("purchases").insert(S.purchases.slice(0,newPurchases).map(function(p){return {user_id:CLOUD_USER.id,reward_name:p.name,gold_cost:p.cost,purchased_at:(p.date||today())+"T12:00:00-03:00"}})))}
  if(before){var events=[];ATTRS.forEach(function(a){var d=after.attrs[a.k]-(before.attrs[a.k]||0);if(d)events.push({user_id:CLOUD_USER.id,event_type:"state_change",event_date:today(),attribute_key:a.k,xp_delta:d,gold_delta:0,source_type:"app_state",metadata:{revision:6}})});var gd=after.gold-before.gold;if(gd)events.push({user_id:CLOUD_USER.id,event_type:"state_change",event_date:today(),xp_delta:0,gold_delta:gd,source_type:"app_state",metadata:{revision:6}});if(events.length)jobs.push(supabase.from("progress_events").insert(events))}
@@ -941,8 +943,8 @@ async function loadCloud(user){
  var uid=user.id,t=today();
  var results=await Promise.all([
   supabase.from("profiles").select("*").eq("user_id",uid).maybeSingle(),
-  supabase.from("daily_entries").select("*").eq("user_id",uid).eq("entry_date",t).maybeSingle(),
-  supabase.from("journal_entries").select("*").eq("user_id",uid).eq("entry_date",t).maybeSingle(),
+  supabase.from("daily_entries").select("*").eq("user_id",uid).order("entry_date",{ascending:false}).limit(1).maybeSingle(),
+  supabase.from("journal_entries").select("*").eq("user_id",uid).order("entry_date",{ascending:false}).limit(1).maybeSingle(),
   supabase.from("weekly_entries").select("*").eq("user_id",uid).order("week_number",{ascending:false}).limit(1).maybeSingle(),
   supabase.from("user_progress").select("*").eq("user_id",uid).maybeSingle(),
   supabase.from("purchases").select("*").eq("user_id",uid).order("purchased_at",{ascending:false}).limit(40),
