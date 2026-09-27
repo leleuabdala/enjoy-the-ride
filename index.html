@@ -14,12 +14,18 @@
 <div class="auth-gate" id="auth-gate">
   <div class="auth-card">
     <div class="logo">Enjoy the Ride<em>.</em></div>
-    <p>Entre para continuar sua jornada.</p>
-    <form id="auth-form">
-      <input class="field" id="auth-email" type="email" autocomplete="email" placeholder="E-mail" required>
-      <input class="field" id="auth-password" type="password" autocomplete="current-password" placeholder="Senha" minlength="6" required>
+    <div class="auth-kicker" id="auth-kicker">BEM-VINDO DE VOLTA</div>
+    <h1 id="auth-title">Continue sua jornada.</h1>
+    <p id="auth-copy">Entre com sua conta para continuar de onde parou.</p>
+    <form id="auth-form" novalidate>
+      <label class="auth-label" for="auth-email">E-mail</label>
+      <input class="field" id="auth-email" type="email" autocomplete="email" placeholder="voce@email.com" required>
+      <label class="auth-label" for="auth-password">Senha</label>
+      <input class="field" id="auth-password" type="password" autocomplete="current-password" placeholder="Sua senha" minlength="6" required>
+      <label class="auth-label" id="auth-confirm-label" for="auth-confirm" hidden>Confirmar senha</label>
+      <input class="field" id="auth-confirm" type="password" autocomplete="new-password" placeholder="Repita sua senha" minlength="6" hidden>
       <button class="btn solid" id="auth-submit" type="submit">Entrar</button>
-      <button class="btn quiet" id="auth-signup" type="button">Criar conta</button>
+      <button class="auth-switch" id="auth-switch" type="button">Primeiro acesso? <b>Criar conta</b></button>
       <p class="auth-message" id="auth-message" aria-live="polite"></p>
     </form>
   </div>
