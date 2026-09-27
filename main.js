@@ -694,29 +694,24 @@ function penaltyAlert(rep){
 }
 
 function loadEntries(){
- if(!DB)return;
- DB.collection("days").orderBy("date","desc").limit(30).get().then(function(snap){
-  var host=el("entries"),sealed=!(S.week.n>=UNSEAL_WEEK||S.unsealed),any=false;
-  host.innerHTML="";
-  snap.docs.forEach(function(s){
-   var d=s.data()||{},pen=(d.mode==="pen"&&Array.isArray(d.pages));
-   if(!d.text&&!pen)return;any=true;
+ if(!CLOUD_USER)return;
+ supabase.from("journal_entries").select("entry_date,mode,text_content,pen_pages,word_count").eq("user_id",CLOUD_USER.id).order("entry_date",{ascending:false}).limit(30).then(function(res){
+  if(res.error)throw res.error;
+  var host=el("entries"),sealed=!(S.week.n>=UNSEAL_WEEK||S.unsealed),any=false;host.innerHTML="";
+  (res.data||[]).forEach(function(d){
+   var pen=(d.mode==="pen"&&Array.isArray(d.pen_pages));if(!d.text_content&&!pen)return;any=true;
    var det=document.createElement("details");det.className="entry";
-   var meta=pen?((d.full||0)+" de 3 páginas · à mão"):((d.words||0)+" palavras");
-   det.innerHTML='<summary><b>'+br(String(d.date||s.id))+'</b><span>'+meta+(sealed?' · selado':'')+'</span></summary><div class="body"></div>';
+   var meta=pen?"à mão":((d.word_count||0)+" palavras");
+   det.innerHTML='<summary><b>'+br(String(d.entry_date))+'</b><span>'+meta+(sealed?' · selado':'')+'</span></summary><div class="body"></div>';
    var body=det.querySelector(".body");
-   if(sealed){
-    body.innerHTML='<div class="sealed"><span>Selado até a Semana '+UNSEAL_WEEK+'.</span><button class="btn quiet">Quebrar o selo</button></div>';
-    body.querySelector("button").addEventListener("click",function(){
-     S.unsealed=true;save();renderHead();loadEntries();toast("Selo quebrado","O arquivo está aberto.")});
-   }else if(pen){body.appendChild(replayCanvas(d.pages||[]))}
-   else{var pp=document.createElement("p");pp.textContent=d.text;body.appendChild(pp)}
+   if(sealed){body.innerHTML='<div class="sealed"><span>Selado até a Semana '+UNSEAL_WEEK+'.</span><button class="btn quiet">Quebrar o selo</button></div>';body.querySelector("button").addEventListener("click",function(){S.unsealed=true;save();renderHead();loadEntries();toast("Selo quebrado","O arquivo está aberto.")})}
+   else if(pen)body.appendChild(replayCanvas(d.pen_pages||[]));
+   else{var pp=document.createElement("p");pp.textContent=d.text_content;body.appendChild(pp)}
    host.appendChild(det);
   });
   if(!any)host.innerHTML='<p class="muted" style="margin:0">Nada arquivado ainda.</p>';
- }).catch(function(){});
+ }).catch(function(e){console.error("Falha ao carregar arquivo",e)});
 }
-
 /* ===== escrita à mão ===== */
 var PEN=(function(){
  var VW=1000,VH=1350,FULL_LEN=15000,MAX_STROKES=900;
@@ -941,28 +936,40 @@ renderAll();
 window.addEventListener("beforeunload",function(){PEN.flush()});
 try{var tb=localStorage.getItem("etr.tab");if(tb){var b=document.querySelector('[data-tab="'+tb+'"]');if(b)b.click()}}catch(e){}
 
-(function boot(){
- if(!window.claude||!window.claude.use){afterLoad();return}
- var done=false,t=setTimeout(function(){if(!done){done=true;afterLoad()}},10000);
- window.claude.use("db").then(function(db){
-  if(done)return;
-  if(!db){done=true;clearTimeout(t);afterLoad();return}
-  DB=db;DOC=db.doc("system/core");
-  return DOC.get().then(function(snap){
-   if(done)return;done=true;clearTimeout(t);
-   if(snap.exists){
-    var rem=snap.data()||{};
-    // o clique do usuário sempre ganha; senão, vence o carimbo mais novo
-    if(!TOUCHED&&(+rem.updatedAt||0)>=(S.updatedAt||0))merge(rem);
-   }
-   afterLoad();loadEntries();
-   if(S.writeMode==="pen"&&!PEN.hasInk()){
-    DB.doc("days/"+today()).get().then(function(ds){
-     if(ds.exists){var d=ds.data()||{};if(d.mode==="pen"&&Array.isArray(d.pages))PEN.adopt(d.pages)}
-    }).catch(function(){});
-   }
-  });
- }).catch(function(){if(!done){done=true;clearTimeout(t);afterLoad()}});
-})();
+async function loadCloud(user){
+ CLOUD_USER=user;
+ var uid=user.id,t=today();
+ var results=await Promise.all([
+  supabase.from("profiles").select("*").eq("user_id",uid).maybeSingle(),
+  supabase.from("daily_entries").select("*").eq("user_id",uid).eq("entry_date",t).maybeSingle(),
+  supabase.from("journal_entries").select("*").eq("user_id",uid).eq("entry_date",t).maybeSingle(),
+  supabase.from("weekly_entries").select("*").eq("user_id",uid).order("week_number",{ascending:false}).limit(1).maybeSingle(),
+  supabase.from("user_progress").select("*").eq("user_id",uid).maybeSingle(),
+  supabase.from("purchases").select("*").eq("user_id",uid).order("purchased_at",{ascending:false}).limit(40),
+  supabase.from("daily_entries").select("entry_date,day_status,done").eq("user_id",uid).gte("entry_date",shift(t,-120)).order("entry_date",{ascending:true})
+ ]);
+ var failed=results.find(function(x){return x.error});if(failed)throw failed.error;
+ var p=results[0].data,d=results[1].data,j=results[2].data,w=results[3].data,pr=results[4].data,buys=results[5].data||[],days=results[6].data||[];
+ var remote=fresh();
+ if(p){remote.start=p.journey_start||remote.start;remote.goal=p.word_goal||750;remote.writeMode=p.write_mode==="pen"?"pen":"key";var pref=p.preferences||{};if(Array.isArray(pref.shop))remote.shop=pref.shop;if(Array.isArray(pref.deck)&&pref.deck.length)remote.deck=pref.deck;remote.unsealed=!!pref.unsealed}
+ if(pr){remote.attrs=pr.attrs||remote.attrs;remote.gold=pr.gold||0;remote.streak=pr.current_streak||0;remote.best=pr.best_streak||0;remote.avatar={v:3,marks:pr.avatar_marks||0,points:pr.avatar_points||0,seen:pr.avatar_seen||{},equipped:p?p.equipped_character:-1}}
+ if(d){remote.day={date:d.entry_date,done:d.done||{},extra:d.extra||{},bonus:d.bonus||{},bonusNote:d.bonus_notes||{},readAttr:d.read_attr||"men",text:j&&j.text_content||"",counted:!!d.counted,closed:!!d.closed}}
+ if(w){remote.week={n:w.week_number,ad:!!w.encounter_done,adNote:w.encounter_note||"",ci:w.checkin||{a:"",b:"",c:""},ciDone:!!w.checkin_done,wrote:w.wrote||0,cards:Array.isArray(w.cards)&&w.cards.length===3?w.cards:dealCards(w.week_number),cardPlan:w.card_plan||{},cardDone:w.card_done||{},prized:!!w.prize_drawn,dish:w.dish||"",dishPicked:!!w.dish_picked,dishDone:!!w.dish_done,meals:Array.isArray(w.meals)?w.meals:["","","","",""],mealsDone:!!w.meals_done,folga:!!w.free_day_used}}
+ remote.purchases=buys.map(function(x){return {date:String(x.purchased_at).slice(0,10),name:x.reward_name,cost:x.gold_cost}});
+ days.forEach(function(x){if(x.day_status==="free_day")remote.history[x.entry_date]="f";else if(x.day_status==="missed")remote.history[x.entry_date]="x";else{var n=0;ATTRS.forEach(function(a){if((x.done||{})[a.k])n++});remote.history[x.entry_date]=n||undefined}});
+ merge(remote);
+ if(j&&j.mode==="pen"&&Array.isArray(j.pen_pages)){S.writeMode="pen";PEN.adopt(j.pen_pages)}
+ CLOUD_PURCHASES=S.purchases.length;CLOUD_BASE=cloudSnapshot();
+ if(!p)await persistCloud();
+}
+var authStarted=false;
+async function startForSession(session){
+ if(authStarted||!session||!session.user)return;authStarted=true;
+ try{await loadCloud(session.user)}catch(e){console.error("Falha ao carregar Supabase",e)}
+ afterLoad();loadEntries();
+}
+window.addEventListener("etr:auth",function(e){var s=e.detail&&e.detail.session;if(s)startForSession(s)});
+if(window.ETR_USER)startForSession({user:window.ETR_USER});
+
 
 })();
