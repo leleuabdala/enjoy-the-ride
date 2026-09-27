@@ -957,10 +957,15 @@ async function loadCloud(user){
  if(w){remote.week={n:w.week_number,ad:!!w.encounter_done,adNote:w.encounter_note||"",ci:w.checkin||{a:"",b:"",c:""},ciDone:!!w.checkin_done,wrote:w.wrote||0,cards:Array.isArray(w.cards)&&w.cards.length===3?w.cards:dealCards(w.week_number),cardPlan:w.card_plan||{},cardDone:w.card_done||{},prized:!!w.prize_drawn,dish:w.dish||"",dishPicked:!!w.dish_picked,dishDone:!!w.dish_done,meals:Array.isArray(w.meals)?w.meals:["","","","",""],mealsDone:!!w.meals_done,folga:!!w.free_day_used}}
  remote.purchases=buys.map(function(x){return {date:String(x.purchased_at).slice(0,10),name:x.reward_name,cost:x.gold_cost}});
  days.forEach(function(x){if(x.day_status==="free_day")remote.history[x.entry_date]="f";else if(x.day_status==="missed")remote.history[x.entry_date]="x";else{var n=0;ATTRS.forEach(function(a){if((x.done||{})[a.k])n++});remote.history[x.entry_date]=n||undefined}});
- merge(remote);
- if(j&&j.mode==="pen"&&Array.isArray(j.pen_pages)){S.writeMode="pen";PEN.adopt(j.pen_pages)}
- CLOUD_PURCHASES=S.purchases.length;CLOUD_BASE=cloudSnapshot();
- if(!p)await persistCloud();
+ if(!p&&loc){
+  /* Primeira conexão: preserva o progresso que já existia neste navegador. */
+  CLOUD_PURCHASES=0;CLOUD_BASE=null;await persistCloud();
+ }else{
+  merge(remote);
+  if(j&&j.mode==="pen"&&Array.isArray(j.pen_pages)){S.writeMode="pen";PEN.adopt(j.pen_pages)}
+  CLOUD_PURCHASES=S.purchases.length;CLOUD_BASE=cloudSnapshot();
+  if(!p)await persistCloud();
+ }
 }
 var authStarted=false;
 async function startForSession(session){
