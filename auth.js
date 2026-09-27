@@ -10,6 +10,10 @@ const submit = document.getElementById('auth-submit')
 const signup = document.getElementById('auth-signup')
 const signout = document.getElementById('auth-signout')
 
+function setMessage(text) {
+  message.textContent = text || ''
+}
+
 function showSession(session) {
   const loggedIn = Boolean(session?.user)
   gate.hidden = loggedIn
@@ -28,38 +32,70 @@ async function currentSession() {
 
 form.addEventListener('submit', async (event) => {
   event.preventDefault()
-  message.textContent = ''
+  setMessage('')
   submit.disabled = true
-  const { error } = await supabase.auth.signInWithPassword({
-    email: email.value.trim(),
-    password: password.value
-  })
-  if (error) message.textContent = 'Não foi possível entrar. Confira e-mail e senha.'
-  submit.disabled = false
+  signup.disabled = true
+  try {
+    const { error } = await supabase.auth.signInWithPassword({
+      email: email.value.trim(),
+      password: password.value
+    })
+    if (error) throw error
+  } catch (error) {
+    console.error('Login failed', error)
+    setMessage(error?.message || 'Não foi possível entrar. Confira e-mail e senha.')
+  } finally {
+    submit.disabled = false
+    signup.disabled = false
+  }
 })
 
-signup.addEventListener('click', async () => {
-  message.textContent = ''
-  if (!email.value.trim() || password.value.length < 6) {
-    message.textContent = 'Informe um e-mail e uma senha com pelo menos 6 caracteres.'
+signup.addEventListener('click', async (event) => {
+  event.preventDefault()
+  setMessage('')
+  const cleanEmail = email.value.trim()
+  if (!cleanEmail || password.value.length < 6) {
+    setMessage('Informe um e-mail e uma senha com pelo menos 6 caracteres.')
     return
   }
+
   signup.disabled = true
-  const { data, error } = await supabase.auth.signUp({
-    email: email.value.trim(),
-    password: password.value
-  })
-  if (error) message.textContent = error.message
-  else if (!data.session) message.textContent = 'Conta criada. Confirme o e-mail para entrar.'
-  signup.disabled = false
+  submit.disabled = true
+  setMessage('Criando conta…')
+  try {
+    const { data, error } = await supabase.auth.signUp({
+      email: cleanEmail,
+      password: password.value,
+      options: { data: { name: 'Gabriel Abdala' } }
+    })
+    if (error) throw error
+    if (data.session) {
+      setMessage('')
+      showSession(data.session)
+    } else {
+      setMessage('Conta criada. Confirme o e-mail para entrar.')
+    }
+  } catch (error) {
+    console.error('Signup failed', error)
+    setMessage(error?.message || 'Não foi possível criar a conta.')
+  } finally {
+    signup.disabled = false
+    submit.disabled = false
+  }
 })
 
 signout.addEventListener('click', async () => {
-  await supabase.auth.signOut()
+  try {
+    const { error } = await supabase.auth.signOut()
+    if (error) throw error
+  } catch (error) {
+    console.error('Signout failed', error)
+    setMessage(error?.message || 'Não foi possível sair.')
+  }
 })
 
 supabase.auth.onAuthStateChange((_event, session) => showSession(session))
 currentSession().catch((error) => {
-  console.error(error)
-  message.textContent = 'Não foi possível iniciar a autenticação.'
+  console.error('Auth initialization failed', error)
+  setMessage(error?.message || 'Não foi possível iniciar a autenticação.')
 })
