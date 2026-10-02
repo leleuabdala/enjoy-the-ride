@@ -90,9 +90,9 @@ var CARD_XP=30,CARD_GOLD=80,BONUS_2=100,BONUS_3=250,GOLD_DISH_PICK=15,GOLD_DISH_
 var RANKS=[{r:"E",min:1},{r:"D",min:5},{r:"C",min:10},{r:"B",min:18},{r:"A",min:28},{r:"S",min:40}];
 var DAYS=["Segunda","Terça","Quarta","Quinta","Sexta"];
 var XP_QUEST=10,XP_EXTRA=5,GOLD_QUEST=5,GOLD_ALL=25,
-    XP_AD=30,GOLD_AD=60,XP_CI=15,GOLD_CI=25,PEN_AD=15,PEN_CI=8,GOLD_MEAL=20,
+    XP_AD=30,GOLD_AD=60,XP_CI=15,GOLD_CI=25,GOLD_MEAL=20,
     
-    PEN_MISS=6,PEN_DECAY=4,DECAY_AFTER=3,MAX_CATCHUP=14,MAX_EXTRA=3,UNSEAL_WEEK=9;
+    PEN_MISS=6,MAX_CATCHUP=14,MAX_EXTRA=3,UNSEAL_WEEK=9;
 
 function need(l){return 40+(l-1)*20}
 function today(){var d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
@@ -179,9 +179,7 @@ function normalizeMeals(values){
 }
 function mealsFilled(){return S.week.meals.slice(0,5).filter(function(m){return m&&m.trim()}).length}
 
-function closeWeek(rep){
- if(!S.week.ad){addXp("vin",-PEN_AD);rep.losses.vin=(rep.losses.vin||0)+PEN_AD;rep.ad=true}
- if(!S.week.ciDone){addXp("men",-PEN_CI);rep.losses.men=(rep.losses.men||0)+PEN_CI;rep.ci=true}
+function closeWeek(){
  if(CLOUD_USER)persistCloud().catch(function(e){console.error(e)})
 }
 function newWeek(n){return {n:n,ad:false,adNote:"",ci:{a:"",b:"",c:""},ciDone:false,wrote:0,
@@ -194,18 +192,18 @@ function settle(){
  var t=today();
  if(S.day.date===t){
    var wn=weekNum(t);
-   if(wn!==S.week.n){var r={days:0,losses:{}};closeWeek(r);S.week=newWeek(wn);return {report:r,archive:null}}
+   if(wn!==S.week.n){var r={days:0,losses:{}};closeWeek();S.week=newWeek(wn);return {report:r,archive:null}}
    return null;
  }
  var gap=diffDays(S.day.date,t);
  if(gap<0){S.day={date:t,done:{},extra:{},bonus:{},bonusNote:{},readAttr:S.day.readAttr||"men",text:"",counted:false,closed:false};return null}
- var rep={days:0,losses:{},broke:false,ad:false,ci:false,folga:false},archive=null;
+ var rep={days:0,losses:{},broke:false,folga:false},archive=null;
 
  var pend=[];
  var n=doneCount();
  S.history[S.day.date]=n>0?n:"x";
  if(S.day.text&&S.day.text.trim())archive={date:S.day.date,text:S.day.text,words:words(S.day.text),week:S.week.n};
- pend.push({date:S.day.date,missing:ATTRS.filter(function(x){return !S.day.done[x.k]}).map(function(x){return x.k})});
+ if(n===0)pend.push({date:S.day.date,missing:ATTRS.map(function(x){return x.k})});
  if(n===ATTRS.length){S.streak++;if(S.streak>S.best)S.best=S.streak}
 
  var missed=Math.min(gap-1,MAX_CATCHUP);
@@ -227,15 +225,11 @@ function settle(){
    p.missing.forEach(function(k){addXp(k,-PEN_MISS);rep.losses[k]=(rep.losses[k]||0)+PEN_MISS});
  });
 
- ATTRS.forEach(function(x){
-   var idle=Math.min(diffDays(S.attrs[x.k].last,t),MAX_CATCHUP+DECAY_AFTER);
-   if(idle>=DECAY_AFTER){var loss=(idle-DECAY_AFTER+1)*PEN_DECAY;addXp(x.k,-loss);rep.losses[x.k]=(rep.losses[x.k]||0)+loss}
- });
  var cut=shift(t,-120);
  Object.keys(S.history).forEach(function(d){if(d<cut)delete S.history[d]});
 
  var wn2=weekNum(t);
- if(wn2!==S.week.n){closeWeek(rep);S.week=newWeek(wn2)}
+ if(wn2!==S.week.n){closeWeek();S.week=newWeek(wn2)}
  S.day={date:t,done:{},extra:{},bonus:{},bonusNote:{},readAttr:S.day.readAttr||"men",text:"",counted:false,closed:false};
  return {report:rep,archive:archive};
 }
@@ -714,11 +708,10 @@ function penaltyAlert(rep){
  var items=Object.keys(rep.losses).filter(function(k){return rep.losses[k]>0});
  if(!items.length&&!rep.folga)return;
  if(!items.length){toast("Folga usada","Um dia da semana passada saiu de graça. Sem penalidade.");return}
- var ex=(rep.ad?" O encontro com a Gi não aconteceu.":"")+(rep.ci?" A checagem ficou em branco.":"")+
-        (rep.folga?" Um dia saiu de graça pela folga da semana.":"");
+ var ex=(rep.folga?" Um dia saiu de graça pela folga da semana.":"");
  var scrim=document.createElement("div");scrim.className="scrim";
  scrim.innerHTML='<div class="alert" role="alertdialog"><h3>O Censor avançou</h3>'+
-  '<p>'+(rep.days?"Você deixou missão em aberto em "+rep.days+(rep.days===1?" dia":" dias")+".":"Compromissos da semana ficaram em aberto.")+
+  '<p>'+(rep.days?"Nenhuma missão diária foi concluída em "+rep.days+(rep.days===1?" dia":" dias")+".":"Nenhuma missão diária foi concluída.")+
   (rep.broke?" A sequência foi zerada.":"")+esc(ex)+'</p>'+
   '<ul>'+items.map(function(k){return "<li>"+attrOf(k).n+" <b>−"+rep.losses[k]+" XP</b></li>"}).join("")+'</ul>'+
   '<div class="quote">“As opiniões negativas do seu Censor não são a verdade.” O placar é. Volte amanhã de manhã.</div>'+
