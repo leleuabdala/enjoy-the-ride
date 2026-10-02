@@ -41,7 +41,15 @@ var POOLS={
   "Anime uma coisa boba só pra você. Sem briefing, sem entrega, sem mostrar pra ninguém.",
   "Pegue um projeto antigo e escreva o que você faria diferente hoje.",
   "Estude um tipo de tipografia em movimento que você não domina e faça um teste de 5 segundos.",
-  "Peça a alguém que você respeita uma crítica direta de uma peça sua. Só ouça."]},
+  "Peça a alguém que você respeita uma crítica direta de uma peça sua. Só ouça.",
+  "Crie três composições diferentes usando os mesmos elementos.",
+  "Escolha uma cena de filme e transforme as cores dela em uma pequena peça sua.",
+  "Faça um teste de animação em que o ritmo conte a ideia.",
+  "Transforme um objeto do dia a dia em um personagem e crie uma pose para ele.",
+  "Explore luz e sombra em um estudo visual curto.",
+  "Crie uma transição entre duas cenas de um projeto seu.",
+  "Monte um storyboard de seis quadros para uma ideia que você gostaria de animar.",
+  "Experimente uma técnica de animação que desperte sua curiosidade e salve o resultado."]},
  corpo:{n:"Corpo",attr:"for",cards:[
   "Marque os três treinos da semana no calendário. Hora marcada, como reunião de cliente.",
   "Um treino a mais do que na semana passada. Um só.",
@@ -50,7 +58,15 @@ var POOLS={
   "Uma caminhada de 30 minutos, três vezes na semana.",
   "Durma antes da meia-noite quatro noites.",
   "Troque um treino por algo que você nunca fez: natação, boxe, escalada.",
-  "Duas semanas de treino sem faltar — esta é a primeira."]},
+  "Duas semanas de treino sem faltar — esta é a primeira.",
+  "Separe a roupa e os acessórios dos próximos treinos para facilitar a saída.",
+  "Faça uma pausa para se movimentar em três dias de trabalho nesta semana.",
+  "Prepare um lanche para levar em um dia de rotina corrida.",
+  "Experimente uma receita que combine com seu planejamento de refeições.",
+  "Reserve um momento da semana para alongar o corpo de forma confortável.",
+  "Organize um espaço da casa para fazer seus exercícios.",
+  "Registre como você se sentiu antes e depois de dois treinos.",
+  "Planeje um horário para começar a desacelerar e experimente seguir esse horário em três noites."]},
  vida:{n:"Vida",attr:"vin",cards:[
   "Planeje e execute uma coisa com a Gi que ela não está esperando.",
   "Resolva aquela pendência da casa que está te irritando há semanas.",
@@ -59,7 +75,15 @@ var POOLS={
   "Faça um jantar pra vocês dois como se fosse restaurante. Mesa posta, o pacote todo.",
   "Leve a Gi a um lugar da cidade onde vocês nunca foram.",
   "Escreva pra ela uma coisa que você nunca disse em voz alta.",
-  "Tire uma tarde pra fazer nada. Nada mesmo, sem tela."]}
+  "Tire uma tarde pra fazer nada. Nada mesmo, sem tela.",
+  "Escolham juntos um filme que nenhum dos dois viu e façam uma sessão em casa.",
+  "Separe alguns objetos que você não usa mais e encaminhe para doação.",
+  "Convide alguém querido para um café ou uma conversa.",
+  "Escolha uma foto de vocês dois e dê a ela um lugar na casa.",
+  "Pergunte à Gi o que tornaria a semana dela mais leve e combine uma ajuda concreta.",
+  "Retome um hobby por um momento nesta semana.",
+  "Organize um cantinho da casa para ficar mais gostoso de usar.",
+  "Anote três coisas boas que aconteceram nesta semana e compartilhe uma com alguém."]}
 };
 var ANGLES=["oficio","corpo","vida"];
 var CARD_XP=30,CARD_GOLD=80,BONUS_2=100,BONUS_3=250,GOLD_DISH_PICK=15,GOLD_DISH_DO=30;
