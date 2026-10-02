@@ -15,7 +15,7 @@ var BONUS=[
   p:"Kindle, papel, tanto faz. Se for livro de craft ou direção de arte, paga em Percepção; qualquer outro paga em Mente.",
   pay:"+7 xp · +8 ouro",gold:8,note:"Qual livro?",pick:[["per","craft / arte"],["men","qualquer outro"]],pickXp:7},
  {k:"well",i:"i-well",n:"Enchi o poço",
-  p:"Quinze minutos recebendo em vez de produzindo: uma galeria, um livro de arte, um filme antigo, uma caminhada sem fone. Não é trabalho e não é estudo — é entrada.",
+  p:"Quinze minutos recebendo em vez de produzindo: uma galeria, um livro de arte, um filme antigo, uma caminhada. Não é trabalho e não é estudo — é entrada.",
   pay:"+8 percepção · +10 ouro",xp:{per:8},gold:10,note:"O que você foi ver?"}
 ];
 var JOURNEY=[
@@ -47,7 +47,7 @@ var POOLS={
   "Um treino a mais do que na semana passada. Um só.",
   "Prepare as proteínas da semana inteira num domingo só.",
   "Cinco dias seguidos comendo o que estava no plano. Domingo não conta.",
-  "Uma caminhada de 30 minutos sem fone, três vezes na semana.",
+  "Uma caminhada de 30 minutos, três vezes na semana.",
   "Durma antes da meia-noite quatro noites.",
   "Troque um treino por algo que você nunca fez: natação, boxe, escalada.",
   "Duas semanas de treino sem faltar — esta é a primeira."]},
@@ -96,7 +96,7 @@ function fresh(){
   week:{n:1,ad:false,adNote:"",ci:{a:"",b:"",c:""},ciDone:false,wrote:0,
         cards:dealCards(1),cardPlan:{},cardDone:{},prized:false,
         dish:"",dishPicked:false,dishDone:false,
-        meals:["","","","",""],mealsDone:false,folga:false},
+        meals:normalizeMeals([]),mealsDone:false,folga:false},
   history:{},purchases:[],unsealed:false,avatar:{v:3,marks:0,points:0,seen:{},equipped:-1},
   shop:[{id:"s1",name:"Compra idiota (até R$100)",cost:300},
         {id:"s2",name:"Tarde inteira de jogo, sem culpa",cost:250},
@@ -149,7 +149,11 @@ function nextRank(){var m=minLvl();for(var i=0;i<RANKS.length;i++)if(m<RANKS[i].
 function doneCount(){var n=0;ATTRS.forEach(function(x){if(S.day.done[x.k])n++});return n}
 function weekNum(d){return Math.floor(diffDays(mondayOf(S.start),mondayOf(d))/7)+1}
 function journeyIdx(){return Math.min(12,Math.max(1,S.week.n))}
-function mealsFilled(){return S.week.meals.filter(function(m){return m&&m.trim()}).length}
+// Keep the first five slots for existing main meals; the last five hold snacks.
+function normalizeMeals(values){
+ return Array.from({length:10},function(_,i){return Array.isArray(values)&&typeof values[i]==="string"?values[i]:""});
+}
+function mealsFilled(){return S.week.meals.slice(0,5).filter(function(m){return m&&m.trim()}).length}
 
 function closeWeek(rep){
  if(!S.week.ad){addXp("vin",-PEN_AD);rep.losses.vin=(rep.losses.vin||0)+PEN_AD;rep.ad=true}
@@ -159,7 +163,7 @@ function closeWeek(rep){
 function newWeek(n){return {n:n,ad:false,adNote:"",ci:{a:"",b:"",c:""},ciDone:false,wrote:0,
  cards:dealCards(n),cardPlan:{},cardDone:{},prized:false,
  dish:"",dishPicked:false,dishDone:false,
- meals:["","","","",""],mealsDone:false,folga:false}}
+ meals:normalizeMeals([]),mealsDone:false,folga:false}}
 function cardsDone(){return Object.keys(S.week.cardDone||{}).filter(function(k){return S.week.cardDone[k]}).length}
 
 function settle(){
@@ -232,7 +236,7 @@ function merge(L){
     cards:(Array.isArray(L.week.cards)&&L.week.cards.length===3)?L.week.cards:dealCards(+L.week.n||1),
     cardPlan:L.week.cardPlan||{},cardDone:L.week.cardDone||{},prized:!!L.week.prized,
     dish:L.week.dish||"",dishPicked:!!L.week.dishPicked,dishDone:!!L.week.dishDone,
-    meals:Array.isArray(L.week.meals)&&L.week.meals.length===5?L.week.meals:["","","","",""],
+    meals:normalizeMeals(L.week.meals),
     mealsDone:!!L.week.mealsDone,folga:!!L.week.folga}:b.week,
   history:L.history||{},purchases:Array.isArray(L.purchases)?L.purchases:[],unsealed:!!L.unsealed,
   avatar:normalizeAvatar(L.avatar),
@@ -372,6 +376,7 @@ function renderHead(){
 }
 
 function renderCards(){
+ S.week.cards.forEach(function(c){if(c.t==="Uma caminhada de 30 minutos sem fone, três vezes na semana.")c.t="Uma caminhada de 30 minutos, três vezes na semana."});
  var host=el("cards");host.innerHTML="";
  S.week.cards.forEach(function(c,i){
   var done=!!S.week.cardDone[i],pool=POOLS[c.a];
@@ -455,19 +460,22 @@ function renderWeek(){
  el("dish-do").setAttribute("aria-pressed",S.week.dishDone?"true":"false");
  if(document.activeElement!==el("dish-name"))el("dish-name").value=S.week.dish||"";
  var mh=el("meals");
- if(mh.children.length!==5){
+ if(mh.querySelectorAll("input").length!==10){
   mh.innerHTML="";
   DAYS.forEach(function(d,i){
    var row=document.createElement("div");row.className="meal";
-   row.innerHTML='<div class="d">'+d.slice(0,3)+'</div><input maxlength="70" placeholder="o que vai ter de janta" aria-label="Janta de '+d+'">';
-   var inp=row.querySelector("input");
-   inp.addEventListener("input",function(){S.week.meals[i]=inp.value;el("meal-tag").textContent=mealsFilled()+" / 5";
-    clearTimeout(fieldTimer);fieldTimer=setTimeout(save,900)});
+   row.innerHTML='<div class="d">'+d.slice(0,3)+'</div>'+
+    '<label class="meal-field"><span>Refeição principal</span><input data-meal="'+i+'" maxlength="70" placeholder="o que você planejou" aria-label="Refeição principal de '+d+'"></label>'+
+    '<label class="meal-field"><span>Lanche <small>(opcional)</small></span><input data-meal="'+(i+5)+'" maxlength="70" placeholder="o que você planejou" aria-label="Lanche de '+d+'"></label>';
+   Array.prototype.forEach.call(row.querySelectorAll("input"),function(inp){
+    inp.addEventListener("input",function(){S.week.meals[Number(inp.dataset.meal)]=inp.value;el("meal-tag").textContent=mealsFilled()+" / 5";
+     clearTimeout(fieldTimer);fieldTimer=setTimeout(save,900)});
+   });
    mh.appendChild(row);
   });
  }
- Array.prototype.forEach.call(mh.querySelectorAll("input"),function(inp,i){
-  if(document.activeElement!==inp)inp.value=S.week.meals[i]||""});
+ Array.prototype.forEach.call(mh.querySelectorAll("input"),function(inp){
+  if(document.activeElement!==inp)inp.value=S.week.meals[Number(inp.dataset.meal)]||""});
  el("meal-save").disabled=S.week.mealsDone;
  el("meal-save").textContent=S.week.mealsDone?"Plano fechado":"Fechar o plano (+"+GOLD_MEAL+" ouro)";
  var host=el("weeks");host.innerHTML="";
@@ -647,7 +655,7 @@ function toggleDishDo(){
 }
 function saveMeals(){
  if(S.week.mealsDone)return;
- if(mealsFilled()<5){toast("Falta janta","Preencha as cinco antes de fechar o plano.");return}
+ if(mealsFilled()<5){toast("Falta refeição principal","Preencha as cinco refeições principais antes de fechar o plano. Os lanches são opcionais.");return}
  S.week.mealsDone=true;S.gold+=GOLD_MEAL;addAvatarMark("semana:"+S.week.n+":plano-refeicoes");
  toast("Plano fechado","+"+GOLD_MEAL+" ouro. Agora é só cumprir.");
  save();renderHead();renderWeek();renderShop();renderAvatar();
@@ -956,7 +964,7 @@ async function loadCloud(user){
  if(p){remote.start=p.journey_start||remote.start;remote.goal=p.word_goal||750;remote.writeMode=p.write_mode==="pen"?"pen":"key";var pref=p.preferences||{};if(Array.isArray(pref.shop))remote.shop=pref.shop;if(Array.isArray(pref.deck)&&pref.deck.length)remote.deck=pref.deck;remote.unsealed=!!pref.unsealed}
  if(pr){remote.attrs=pr.attrs||remote.attrs;remote.gold=pr.gold||0;remote.streak=pr.current_streak||0;remote.best=pr.best_streak||0;remote.avatar={v:3,marks:pr.avatar_marks||0,points:pr.avatar_points||0,seen:pr.avatar_seen||{},equipped:p?p.equipped_character:-1}}
  if(d){remote.day={date:d.entry_date,done:d.done||{},extra:d.extra||{},bonus:d.bonus||{},bonusNote:d.bonus_notes||{},readAttr:d.read_attr||"men",text:j&&j.text_content||"",counted:!!d.counted,closed:!!d.closed}}
- if(w){remote.week={n:w.week_number,ad:!!w.encounter_done,adNote:w.encounter_note||"",ci:w.checkin||{a:"",b:"",c:""},ciDone:!!w.checkin_done,wrote:w.wrote||0,cards:Array.isArray(w.cards)&&w.cards.length===3?w.cards:dealCards(w.week_number),cardPlan:w.card_plan||{},cardDone:w.card_done||{},prized:!!w.prize_drawn,dish:w.dish||"",dishPicked:!!w.dish_picked,dishDone:!!w.dish_done,meals:Array.isArray(w.meals)?w.meals:["","","","",""],mealsDone:!!w.meals_done,folga:!!w.free_day_used}}
+ if(w){remote.week={n:w.week_number,ad:!!w.encounter_done,adNote:w.encounter_note||"",ci:w.checkin||{a:"",b:"",c:""},ciDone:!!w.checkin_done,wrote:w.wrote||0,cards:Array.isArray(w.cards)&&w.cards.length===3?w.cards:dealCards(w.week_number),cardPlan:w.card_plan||{},cardDone:w.card_done||{},prized:!!w.prize_drawn,dish:w.dish||"",dishPicked:!!w.dish_picked,dishDone:!!w.dish_done,meals:normalizeMeals(w.meals),mealsDone:!!w.meals_done,folga:!!w.free_day_used}}
  remote.purchases=buys.map(function(x){return {date:String(x.purchased_at).slice(0,10),name:x.reward_name,cost:x.gold_cost}});
  days.forEach(function(x){if(x.day_status==="free_day")remote.history[x.entry_date]="f";else if(x.day_status==="missed")remote.history[x.entry_date]="x";else{var n=0;ATTRS.forEach(function(a){if((x.done||{})[a.k])n++});remote.history[x.entry_date]=n||undefined}});
  if(!p&&loc){
