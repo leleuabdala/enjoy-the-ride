@@ -509,7 +509,7 @@ function renderShop(){
 function renderLog(){
  var host=el("heat");host.innerHTML="";
  var t=today(),full=0;
- for(var i=89;i>=0;i--){
+ for(var i=0;i<90;i++){
   var d=shift(t,-i),v=(d===t)?(doneCount()||0):S.history[d],u=document.createElement("u");
   u.title=br(d)+(v==="x"?" · penalidade":v==="f"?" · folga":(v?" · "+v+"/5":" · sem registro"));
   if(v==="x")u.setAttribute("data-v","x");
