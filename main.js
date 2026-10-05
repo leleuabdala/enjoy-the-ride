@@ -137,7 +137,7 @@ function fresh(){
         {id:"c7",t:"Um dia inteiro sem abrir este app. Folga total, sem penalidade."},
         {id:"c8",t:"Aquele stand-up que você queria ver. Compra o ingresso hoje."}]};
 }
-var S=fresh(),saveTimer=null,padTimer=null,fieldTimer=null,BOOTED=false,TOUCHED=false,CLOUD_USER=null,CLOUD_BASE=null,CLOUD_PURCHASES=0;
+var S=fresh(),saveTimer=null,padTimer=null,fieldTimer=null,BOOTED=false,TOUCHED=false,CLOUD_USER=null,CLOUD_BASE=null,CLOUD_PURCHASES=0,CONFIRMED_DAYS={};
 function xpTotal(a){var n=0;for(var l=1;l<a.lvl;l++)n+=need(l);return n+a.xp}
 function cloudSnapshot(){var x={gold:S.gold,attrs:{}};ATTRS.forEach(function(a){x.attrs[a.k]=xpTotal(S.attrs[a.k])});return x}
 function weekStart(){return mondayOf(S.day.date||today())}
@@ -180,7 +180,7 @@ function normalizeMeals(values){
 function mealsFilled(){return S.week.meals.slice(0,5).filter(function(m){return m&&m.trim()}).length}
 
 function closeWeek(){
- if(CLOUD_USER)persistCloud().catch(function(e){console.error(e)})
+ if(CLOUD_USER)supabase.from("weekly_entries").upsert(cloudRows().week,{onConflict:"user_id,week_number"}).then(function(r){if(r.error)console.error(r.error)});
 }
 function newWeek(n){return {n:n,ad:false,adNote:"",ci:{a:"",b:"",c:""},ciDone:false,wrote:0,
  cards:dealCards(n),cardPlan:{},cardDone:{},prized:false,
@@ -188,6 +188,18 @@ function newWeek(n){return {n:n,ad:false,adNote:"",ci:{a:"",b:"",c:""},ciDone:fa
  meals:normalizeMeals([]),mealsDone:false,folga:false}}
 function cardsDone(){return Object.keys(S.week.cardDone||{}).filter(function(k){return S.week.cardDone[k]}).length}
 
+// Saved mission events protect completed days if a stale tab overwrote their summary.
+function completedOn(date){return CONFIRMED_DAYS[date]||typeof S.history[date]==="number"&&S.history[date]>0}
+function missionDays(events){
+ var totals={},days={};
+ events.forEach(function(e){
+  if(Math.abs(e.xp_delta)!==XP_QUEST||!e.attribute_key)return;
+  var key=e.event_date+":"+e.attribute_key;
+  totals[key]=(totals[key]||0)+e.xp_delta;
+ });
+ Object.keys(totals).forEach(function(key){if(totals[key]>0)days[key.slice(0,10)]=true});
+ return days;
+}
 function settle(){
  var t=today();
  if(S.day.date===t){
@@ -197,18 +209,21 @@ function settle(){
  }
  var gap=diffDays(S.day.date,t);
  if(gap<0){S.day={date:t,done:{},extra:{},bonus:{},bonusNote:{},readAttr:S.day.readAttr||"men",text:"",counted:false,closed:false};return null}
- var rep={days:0,losses:{},broke:false,folga:false},archive=null;
+ var rep={days:0,dates:[],losses:{},broke:false,folga:false},archive=null;
 
  var pend=[];
  var n=doneCount();
- S.history[S.day.date]=n>0?n:"x";
+ var hadActivity=n>0||completedOn(S.day.date);
+ S.history[S.day.date]=hadActivity?(n||S.history[S.day.date]>0&&S.history[S.day.date]||1):"x";
  if(S.day.text&&S.day.text.trim())archive={date:S.day.date,text:S.day.text,words:words(S.day.text),week:S.week.n};
- if(n===0)pend.push({date:S.day.date,missing:ATTRS.map(function(x){return x.k})});
+ if(!hadActivity)pend.push({date:S.day.date,missing:ATTRS.map(function(x){return x.k})});
  if(n===ATTRS.length){S.streak++;if(S.streak>S.best)S.best=S.streak}
 
  var missed=Math.min(gap-1,MAX_CATCHUP);
  for(var i=1;i<=missed;i++){
-   var d=shift(S.day.date,i);S.history[d]="x";
+   var d=shift(S.day.date,i);
+   if(completedOn(d)||S.history[d]==="f")continue;
+   S.history[d]="x";
    pend.push({date:d,missing:ATTRS.map(function(x){return x.k})});
  }
  // folga: o pior dia da leva sai de graça, uma vez por semana
@@ -221,7 +236,7 @@ function settle(){
  }
  pend.forEach(function(p){
    if(!p.missing.length)return;
-   rep.days++;if(S.streak>0){rep.broke=true}S.streak=0;
+   rep.days++;rep.dates.push(p.date);if(S.streak>0){rep.broke=true}S.streak=0;
    p.missing.forEach(function(k){addXp(k,-PEN_MISS);rep.losses[k]=(rep.losses[k]||0)+PEN_MISS});
  });
 
@@ -707,12 +722,12 @@ function toast(title,body){
 function penaltyAlert(rep){
  var items=Object.keys(rep.losses).filter(function(k){return rep.losses[k]>0});
  if(!items.length&&!rep.folga)return;
- if(!items.length){toast("Folga usada","Um dia da semana passada saiu de graça. Sem penalidade.");return}
+ if(!items.length)return;
  var ex=(rep.folga?" Um dia saiu de graça pela folga da semana.":"");
  var scrim=document.createElement("div");scrim.className="scrim";
  scrim.innerHTML='<div class="alert" role="alertdialog"><h3>O Censor avançou</h3>'+
   '<p>'+(rep.days?"Nenhuma missão diária foi concluída em "+rep.days+(rep.days===1?" dia":" dias")+".":"Nenhuma missão diária foi concluída.")+
-  (rep.broke?" A sequência foi zerada.":"")+esc(ex)+'</p>'+
+  (rep.dates&&rep.dates.length?" Datas: "+rep.dates.map(br).join(", ")+".":"")+(rep.broke?" A sequência foi zerada.":"")+esc(ex)+'</p>'+
   '<ul>'+items.map(function(k){return "<li>"+attrOf(k).n+" <b>−"+rep.losses[k]+" XP</b></li>"}).join("")+'</ul>'+
   '<div class="quote">“As opiniões negativas do seu Censor não são a verdade.” O placar é. Volte amanhã de manhã.</div>'+
   '<button class="btn">Aceitar</button></div>';
@@ -873,6 +888,7 @@ var PEN=(function(){
   renderDots();stat();
  }
  return {init:init,fit:fit,flush:flush,hasInk:hasInk,
+  newDay:function(){clearTimeout(tmr);myDate=today();pages=[mk(),mk(),mk()];cur=0;dirty=false;drawing=false;active=null;live=null;loadLocal();redraw();renderDots();stat()},
   adopt:function(p){if(Array.isArray(p)&&p.length===3){pages=p;saveLocal();redraw();renderDots()}}};
 })();
 
@@ -950,6 +966,22 @@ el("r-name").addEventListener("keydown",function(e){if(e.key==="Enter")el("r-add
 el("r-cost").addEventListener("keydown",function(e){if(e.key==="Enter")el("r-add").click()});
 el("d-name").addEventListener("keydown",function(e){if(e.key==="Enter")el("d-add").click()});
 
+/* Advance an open tab before its next action, not only on initial login. */
+function refreshDay(){
+ if(!BOOTED||S.day.date===today())return;
+ PEN.flush();
+ var out=settle();
+ if(!out)return;
+ if(out.archive)archiveDay(out.archive);
+ PEN.newDay();
+ el("pad").value=S.day.text;
+ save();renderAll();penaltyAlert(out.report);
+}
+["pointerdown","focusin","beforeinput","click"].forEach(function(name){document.addEventListener(name,refreshDay,true)});
+window.addEventListener("focus",refreshDay);
+document.addEventListener("visibilitychange",function(){if(!document.hidden)refreshDay()});
+setInterval(function(){if(!document.hidden)refreshDay()},30000);
+
 /* ===== boot ===== */
 function afterLoad(){
  BOOTED=true;
@@ -977,6 +1009,15 @@ async function loadCloud(user){
  ]);
  var failed=results.find(function(x){return x.error});if(failed)throw failed.error;
  var p=results[0].data,d=results[1].data,j=results[2].data,w=results[3].data,pr=results[4].data,buys=results[5].data||[],days=results[6].data||[];
+ var eventRows=[],offset=0;
+ while(true){
+  var page=await supabase.from("progress_events").select("event_date,attribute_key,xp_delta").eq("user_id",uid).gte("event_date",shift(t,-MAX_CATCHUP-1)).order("created_at",{ascending:true}).order("id",{ascending:true}).range(offset,offset+999);
+  if(page.error)throw page.error;
+  eventRows=eventRows.concat(page.data||[]);
+  if(!page.data||page.data.length<1000)break;
+  offset+=1000;
+ }
+ CONFIRMED_DAYS=missionDays(eventRows);
  var remote=fresh();
  if(p){remote.start=p.journey_start||remote.start;remote.goal=p.word_goal||750;remote.writeMode=p.write_mode==="pen"?"pen":"key";var pref=p.preferences||{};if(Array.isArray(pref.shop))remote.shop=pref.shop;if(Array.isArray(pref.deck)&&pref.deck.length)remote.deck=pref.deck;remote.unsealed=!!pref.unsealed}
  if(pr){remote.attrs=pr.attrs||remote.attrs;remote.gold=pr.gold||0;remote.streak=pr.current_streak||0;remote.best=pr.best_streak||0;remote.avatar={v:3,marks:pr.avatar_marks||0,points:pr.avatar_points||0,seen:pr.avatar_seen||{},equipped:p?p.equipped_character:-1}}
@@ -997,7 +1038,7 @@ async function loadCloud(user){
 var authStarted=false;
 async function startForSession(session){
  if(authStarted||!session||!session.user)return;authStarted=true;
- try{await loadCloud(session.user)}catch(e){console.error("Falha ao carregar Supabase",e)}
+ try{await loadCloud(session.user)}catch(e){console.error("Falha ao carregar Supabase",e);authStarted=false;toast("Não foi possível sincronizar","Recarregue para tentar novamente. Nenhuma penalidade foi calculada.");return}
  afterLoad();loadEntries();
 }
 window.addEventListener("etr:auth",function(e){var s=e.detail&&e.detail.session;if(s)startForSession(s)});
@@ -1005,3 +1046,4 @@ if(window.ETR_USER)startForSession({user:window.ETR_USER});
 
 
 })();
+
