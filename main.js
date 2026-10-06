@@ -94,6 +94,7 @@ var XP_QUEST=10,XP_EXTRA=5,GOLD_QUEST=5,GOLD_ALL=25,
     
     PEN_MISS=6,MAX_CATCHUP=14,MAX_EXTRA=3,UNSEAL_WEEK=9;
 
+var MAX_LEVEL=99;
 function need(l){return 40+(l-1)*20}
 function today(){var d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
 function shift(ds,n){var p=ds.split("-"),d=new Date(+p[0],+p[1]-1,+p[2]);d.setDate(d.getDate()+n);
@@ -165,7 +166,7 @@ async function persistCloud(){
 
 function attrOf(k){for(var i=0;i<ATTRS.length;i++)if(ATTRS[i].k===k)return ATTRS[i];return ATTRS[0]}
 function addXp(k,amt){var a=S.attrs[k];if(!a)return;a.xp+=amt;
- while(a.xp>=need(a.lvl)){a.xp-=need(a.lvl);a.lvl++;toast("Nível acima","<b>"+attrOf(k).n+"</b> chegou ao nível "+a.lvl+".")}
+ while(a.lvl<MAX_LEVEL&&a.xp>=need(a.lvl)){a.xp-=need(a.lvl);a.lvl++;toast("Nível acima","<b>"+attrOf(k).n+"</b> chegou ao nível "+a.lvl+".")}
  while(a.xp<0){if(a.lvl>1){a.lvl--;a.xp+=need(a.lvl)}else a.xp=0}}
 function minLvl(){return ATTRS.reduce(function(m,x){return Math.min(m,S.attrs[x.k].lvl)},999)}
 function rank(){var m=minLvl(),r=RANKS[0];for(var i=0;i<RANKS.length;i++)if(m>=RANKS[i].min)r=RANKS[i];return r}
@@ -252,6 +253,7 @@ function settle(){
 function localSave(){try{localStorage.setItem("etr.v3",JSON.stringify(S))}catch(e){}}
 function localLoad(){try{var r=localStorage.getItem("etr.v3");return r?JSON.parse(r):null}catch(e){return null}}
 function save(){
+ reconcileAvatarMarks();
  S.updatedAt=Date.now();TOUCHED=true;localSave();
  if(!CLOUD_USER)return;clearTimeout(saveTimer);
  saveTimer=setTimeout(function(){persistCloud().catch(function(e){console.error("Falha ao salvar no Supabase",e)})},500);
@@ -276,7 +278,10 @@ function merge(L){
   shop:Array.isArray(L.shop)?L.shop:b.shop,
   deck:Array.isArray(L.deck)&&L.deck.length?L.deck:b.deck};
  ATTRS.forEach(function(x){var s=(L.attrs||{})[x.k]||{};
-  S.attrs[x.k]={xp:+s.xp||0,lvl:Math.max(1,+s.lvl||1),last:s.last||S.day.date,quest:s.quest||x.q}});
+  var lvl=Math.max(1,Math.floor(+s.lvl||1)),xp=Math.max(0,+s.xp||0);
+  while(lvl>MAX_LEVEL){lvl--;xp+=need(lvl)}
+  while(lvl<MAX_LEVEL&&xp>=need(lvl)){xp-=need(lvl);lvl++}
+  S.attrs[x.k]={xp:xp,lvl:lvl,last:s.last||S.day.date,quest:s.quest||x.q}});
  reconcileAvatarMarks();
 }
 
@@ -289,15 +294,19 @@ var AVATAR_CLASSES=[
  {slug:"mago",name:"Mago",accent:"#307760",soft:"#E4EEE7",color:"verde-jade",weapon:"Cajado",steps:["Primeira luva","Botas","Túnica","Luvas e bolsa","Chapéu","Manto","Cajado"]},
  {slug:"patrulheiro",name:"Patrulheiro",accent:"#947020",soft:"#F3ECD6",color:"ocre",weapon:"Arco e aljava",steps:["Primeira luva","Botas","Colete","Luvas e cinto","Chapéu","Capa","Arco e aljava"]}
 ];
+function totalLevels(){return ATTRS.reduce(function(n,a){return n+S.attrs[a.k].lvl},0)}
+function levelPieces(){return totalLevels()-ATTRS.length}
 function normalizeAvatar(old){
  old=old&&typeof old==="object"?old:{};
  var marks=Math.max(0,Math.floor(Number(old.marks)||0));
- var points=(old.v===2||old.v===3)?Math.max(0,Math.floor(Number(old.points)||0)):
+ var points=(old.v===2||old.v===3||old.v===4)?Math.max(0,Math.floor(Number(old.points)||0)):
    Math.floor(marks/12)*AVATAR_CLASS_POINTS+Math.ceil((marks%12)*7/12)*AVATAR_STEP;
- var selected=(old.v===2||old.v===3)?old.equipped:old.view;
- var earned=Math.floor(points/AVATAR_CLASS_POINTS);
- return {v:3,marks:marks,points:points,seen:old.seen&&typeof old.seen==="object"&&!Array.isArray(old.seen)?old.seen:{},
-   equipped:Number.isInteger(selected)&&selected>=0&&selected<earned?selected:-1};
+ var seen=old.seen&&typeof old.seen==="object"&&!Array.isArray(old.seen)?Object.assign({},old.seen):{};
+ // Carry over existing visual unlocks once. New unlocks come only from attribute levels.
+ if(!seen.__levelProgression){seen.__legacyPieces=Math.floor(points/AVATAR_STEP);seen.__levelProgression=true}
+ seen.__legacyPieces=Math.max(0,Math.floor(Number(seen.__legacyPieces)||0));
+ var selected=(old.v===2||old.v===3||old.v===4)?old.equipped:old.view;
+ return {v:4,marks:marks,points:points,seen:seen,equipped:Number.isInteger(selected)?selected:-1};
 }
 function avatarSet(index){
  var base=AVATAR_CLASSES[index%AVATAR_CLASSES.length],cycle=Math.floor(index/AVATAR_CLASSES.length)+1;
@@ -312,37 +321,23 @@ function avatarSprite(index,stage){
  var set=avatarSet(index),frame=Math.max(0,Math.min(7,stage));
  return '<span class="dog-sprite dog-'+set.slug+'" data-class="'+set.slug+'" data-stage="'+frame+'" aria-hidden="true" style="--frame-x:'+((frame%4)*100/3)+'%;--frame-y:'+(frame<4?0:100)+'%"></span>';
 }
-function addAvatarMark(id){
- if(S.avatar.seen[id])return;
- S.avatar.seen[id]=true;S.avatar.marks++;S.avatar.points++;
- if(S.avatar.points%AVATAR_STEP!==0)return;
- var current=avatarCurrent(),set=avatarSet(current.index);
- if(current.stage===7)toast("Classe completa",esc(set.name)+": conjunto e "+esc(set.weapon.toLowerCase())+" guardados no armário.");
- else toast("Uma peça de cada vez",esc(set.steps[current.stage-1])+" conquistada. Seu cachorrinho está evoluindo!");
-}
-function removeAvatarMark(id){
- if(!S.avatar.seen[id])return;
- delete S.avatar.seen[id];
- S.avatar.marks=Math.max(0,S.avatar.marks-1);
- S.avatar.points=Math.max(0,S.avatar.points-1);
+// Compatibility hooks for existing actions; there is no activity-based currency now.
+function addAvatarMark(){reconcileAvatarMarks()}
+function removeAvatarMark(){reconcileAvatarMarks()}
+function reconcileAvatarMarks(){
+ if(!S.avatar)return;
+ if(!S.avatar.seen.__levelProgression)S.avatar=normalizeAvatar(S.avatar);
+ S.avatar.points=Math.max(levelPieces(),S.avatar.seen.__legacyPieces)*AVATAR_STEP;
  if(S.avatar.equipped>=Math.floor(S.avatar.points/AVATAR_CLASS_POINTS))S.avatar.equipped=-1;
 }
-function reconcileAvatarMarks(){
- // Repair credits from earlier versions before settling the saved day/week.
- // Previous days stay earned; only the editable day's and week's unchecked items are removed.
- function check(id,active){if(!active)removeAvatarMark(id)}
- ATTRS.forEach(function(a){
-  check("dia:"+S.day.date+":"+a.k,!!S.day.done[a.k]);
-  for(var i=0;i<MAX_EXTRA;i++)check("extra:"+S.day.date+":"+a.k+":"+i,(+S.day.extra[a.k]||0)>i);
- });
- BONUS.forEach(function(b){check("bonus:"+S.day.date+":"+b.k,!!S.day.bonus[b.k])});
- var week="semana:"+S.week.n+":";
- check(week+"encontro",S.week.ad);check(week+"checagem",S.week.ciDone);
- check(week+"prato-escolhido",S.week.dishPicked);check(week+"prato-feito",S.week.dishDone);
- check(week+"plano-refeicoes",S.week.mealsDone);
- S.week.cards.forEach(function(c,i){check(week+"carta:"+i,!!S.week.cardDone[i])});
+function nextPieceProgress(){
+ var pieces=S.avatar.points/AVATAR_STEP,levels=totalLevels();
+ var target=ATTRS.length+pieces+1;
+ var fraction=ATTRS.reduce(function(best,a){var v=S.attrs[a.k];return Math.max(best,v.lvl>=MAX_LEVEL?0:v.xp/need(v.lvl))},0);
+ return {target:target,percent:Math.max(0,Math.min(100,(pieces===levelPieces()?fraction:(levelPieces()+fraction)/(pieces+1))*100)),max:levels>=ATTRS.length*MAX_LEVEL};
 }
 function renderAvatar(){
+ reconcileAvatarMarks();
  var current=avatarCurrent(),unlocked=Math.floor(S.avatar.points/AVATAR_CLASS_POINTS);
  var equipped=S.avatar.equipped>=0&&S.avatar.equipped<unlocked?S.avatar.equipped:-1;
  var display=equipped>=0?equipped:current.index,stage=equipped>=0?7:current.stage;
@@ -355,16 +350,16 @@ function renderAvatar(){
  el("avatar-art").setAttribute("aria-label","Cachorrinho "+set.name.toLowerCase()+", "+stage+" de 7 melhorias, destaque "+set.color);
  el("avatar-tier").textContent=stage===7?"Classe completa · "+set.color:"Em formação · "+set.color;
  el("avatar-status").textContent=stage===0&&display===0?"Pequeno aventureiro":set.name;
- el("avatar-count").textContent=S.avatar.marks+" "+(S.avatar.marks===1?"conquista":"conquistas");
- el("avatar-equipped-note").textContent=equipped>=0?"Conjunto do armário equipado.":"O visual acompanha suas novas conquistas.";
+ el("avatar-count").textContent="Nível total "+totalLevels()+" / "+(ATTRS.length*MAX_LEVEL);
+ el("avatar-equipped-note").textContent=equipped>=0?"Conjunto do armário equipado.":"O visual acompanha os níveis dos seus atributos.";
  el("avatar-training").textContent="Em evolução · "+training.name;
- var remaining=AVATAR_STEP-current.within,filled=current.stage===7?AVATAR_STEP:current.within;
- el("avatar-bar").style.width=(filled/AVATAR_STEP*100)+"%";
- var meter=el("avatar-meter");meter.setAttribute("aria-valuenow",String(filled));
- meter.setAttribute("aria-valuetext",current.stage===7?"Classe completa":filled+" de 8 conquistas para "+training.steps[current.stage]);
- el("avatar-next").textContent=current.stage===7?
-   "Conjunto completo! Na próxima conquista começa a classe "+avatarSet(current.index+1).name+".":
-   "Falta"+(remaining===1?"":"m")+" "+remaining+" conquista"+(remaining===1?"":"s")+" para: "+training.steps[current.stage]+".";
+ var progress=nextPieceProgress();
+ el("avatar-bar").style.width=(progress.max?100:progress.percent)+"%";
+ var meter=el("avatar-meter");meter.setAttribute("aria-valuemax","100");meter.setAttribute("aria-valuenow",String(progress.max?100:Math.floor(progress.percent)));
+ meter.setAttribute("aria-valuetext",progress.max?"Todos os atributos no nível 99":"Próxima peça no nível total "+progress.target);
+ el("avatar-next").textContent=progress.max?"Todos os atributos no nível 99. Jornada completa!":
+   current.stage===7?"Próxima classe: "+avatarSet(current.index+1).name+". Primeira peça no nível total "+progress.target+".":
+   training.steps[current.stage]+" no nível total "+progress.target+". Ganhe níveis em qualquer atributo.";
  el("avatar-steps").innerHTML=training.steps.map(function(name,i){return '<li class="'+(i<current.stage?'earned':i===current.stage?'next':'')+'"><span aria-hidden="true">'+(i<current.stage?'✓':i+1)+'</span>'+esc(name)+(i<current.stage?'<span class="sr-only"> conquistada</span>':'')+'</li>'}).join("");
  el("avatar-roadmap").innerHTML=AVATAR_CLASSES.map(function(c,i){return '<span'+(i===current.index%3?' aria-current="step"':'')+'>'+c.name+'</span>'}).join('<i aria-hidden="true">→</i>');
  var host=el("wardrobe");host.innerHTML="";
@@ -391,10 +386,11 @@ function renderHead(){
  st.className="tally"+(S.streak>0?" hot":" off");
  el("arc").innerHTML=(S.week.n>12?"Pós-jornada · semana "+S.week.n+" · <b>"+esc(JOURNEY[11][0])+" (de novo)</b>"
    :"Semana "+S.week.n+" de 12 · <b>Recuperando o senso de "+esc(JOURNEY[j-1][0].toLowerCase())+"</b>");
- if(nx){var prog=Math.max(0,Math.min(1,(m-r.min)/(nx.min-r.min)));
-  el("gate-txt").textContent="Rank "+nx.r+" — nível "+nx.min+" em todos";
+ if(nx){var floor=xpTotal({lvl:r.min,xp:0}),goal=xpTotal({lvl:nx.min,xp:0});
+  var prog=ATTRS.reduce(function(sum,a){return sum+Math.max(0,Math.min(1,(xpTotal(S.attrs[a.k])-floor)/(goal-floor)))},0)/ATTRS.length;
+  el("gate-txt").textContent="Rank atual: "+r.r+" → Próximo: "+nx.r+" · nível "+nx.min+" em todos";
   el("gate-bar").style.width=(prog*100).toFixed(1)+"%";
- }else{el("gate-txt").textContent="Rank máximo";el("gate-bar").style.width="100%"}
+ }else{el("gate-txt").textContent="Rank atual: S · rank máximo";el("gate-bar").style.width="100%"}
  el("today-str").textContent=new Date().toLocaleDateString("pt-BR",{weekday:"long",day:"2-digit",month:"long"});
  el("daily-count").textContent=doneCount()+" / "+ATTRS.length;
  el("write-date").textContent=br(S.day.date);
@@ -429,7 +425,7 @@ function renderCards(){
 function renderAttrs(){
  var host=el("attrs");host.innerHTML="";
  ATTRS.forEach(function(x){
-  var a=S.attrs[x.k],pct=Math.max(0,Math.min(100,a.xp/need(a.lvl)*100)),ex=S.day.extra[x.k]||0;
+  var a=S.attrs[x.k],pct=a.lvl>=MAX_LEVEL?100:Math.max(0,Math.min(100,a.xp/need(a.lvl)*100)),ex=S.day.extra[x.k]||0;
   var row=document.createElement("div");row.className="attr";
   row.innerHTML='<div class="ico">'+icon(x.i)+'</div>'+
    '<div class="attr-main">'+
@@ -437,7 +433,7 @@ function renderAttrs(){
      '<input class="qtext" value="'+esc(a.quest)+'" maxlength="90" aria-label="Missão de '+x.n+'">'+
      '<div class="meter"><div class="lv">'+a.lvl+'<span>nível</span></div>'+
      '<div class="bar"><i style="width:'+pct.toFixed(1)+'%"></i></div>'+
-     '<div class="xp">'+a.xp+'/'+need(a.lvl)+' xp</div></div>'+
+     '<div class="xp">'+(a.lvl>=MAX_LEVEL?'Nível máximo':a.xp+'/'+need(a.lvl)+' xp')+'</div></div>'+
    '</div>'+
    '<div class="attr-side">'+
      '<button class="mark"'+(BOOTED?"":" disabled")+' aria-pressed="'+(S.day.done[x.k]?"true":"false")+'" aria-label="Cumpri a missão de '+x.n+'">'+
@@ -1046,4 +1042,5 @@ if(window.ETR_USER)startForSession({user:window.ETR_USER});
 
 
 })();
+
 
