@@ -87,7 +87,6 @@ var POOLS={
 };
 var ANGLES=["oficio","corpo","vida"];
 var CARD_XP=30,CARD_GOLD=80,BONUS_2=100,BONUS_3=250,GOLD_DISH_PICK=15,GOLD_DISH_DO=30;
-var RANKS=[{r:"E",min:1},{r:"D",min:5},{r:"C",min:10},{r:"B",min:18},{r:"A",min:28},{r:"S",min:40}];
 var DAYS=["Segunda","Terça","Quarta","Quinta","Sexta"];
 var XP_QUEST=10,XP_EXTRA=5,GOLD_QUEST=5,GOLD_ALL=25,
     XP_AD=30,GOLD_AD=60,XP_CI=15,GOLD_CI=25,GOLD_MEAL=20,
@@ -168,9 +167,14 @@ function attrOf(k){for(var i=0;i<ATTRS.length;i++)if(ATTRS[i].k===k)return ATTRS
 function addXp(k,amt){var a=S.attrs[k];if(!a)return;a.xp+=amt;
  while(a.lvl<MAX_LEVEL&&a.xp>=need(a.lvl)){a.xp-=need(a.lvl);a.lvl++;toast("Nível acima","<b>"+attrOf(k).n+"</b> chegou ao nível "+a.lvl+".")}
  while(a.xp<0){if(a.lvl>1){a.lvl--;a.xp+=need(a.lvl)}else a.xp=0}}
-function minLvl(){return ATTRS.reduce(function(m,x){return Math.min(m,S.attrs[x.k].lvl)},999)}
-function rank(){var m=minLvl(),r=RANKS[0];for(var i=0;i<RANKS.length;i++)if(m>=RANKS[i].min)r=RANKS[i];return r}
-function nextRank(){var m=minLvl();for(var i=0;i<RANKS.length;i++)if(m<RANKS[i].min)return RANKS[i];return null}
+// One global rank derived from the same XP held by the five attributes.
+function rankThreshold(level){return 10*(level-1)*(level+2)}
+function rank(){
+ var total=ATTRS.reduce(function(sum,a){return sum+xpTotal(S.attrs[a.k])},0);
+ var level=Math.max(1,Math.floor((Math.sqrt(9+total/2.5)-1)/2));
+ var start=rankThreshold(level),required=need(level);
+ return {r:level,xp:total-start,required:required};
+}
 function doneCount(){var n=0;ATTRS.forEach(function(x){if(S.day.done[x.k])n++});return n}
 function weekNum(d){return Math.floor(diffDays(mondayOf(S.start),mondayOf(d))/7)+1}
 function journeyIdx(){return Math.min(12,Math.max(1,S.week.n))}
@@ -377,7 +381,7 @@ function renderAvatar(){
 }
 
 function renderHead(){
- var r=rank(),nx=nextRank(),m=minLvl(),j=journeyIdx();
+ var r=rank(),j=journeyIdx();
  el("rank-letter").textContent=r.r;
  el("c-lvl").textContent=ATTRS.reduce(function(s,x){return s+S.attrs[x.k].lvl},0);
  el("c-gold").textContent=S.gold;el("shop-gold").textContent=S.gold+" ouro";
@@ -386,11 +390,13 @@ function renderHead(){
  st.className="tally"+(S.streak>0?" hot":" off");
  el("arc").innerHTML=(S.week.n>12?"Pós-jornada · semana "+S.week.n+" · <b>"+esc(JOURNEY[11][0])+" (de novo)</b>"
    :"Semana "+S.week.n+" de 12 · <b>Recuperando o senso de "+esc(JOURNEY[j-1][0].toLowerCase())+"</b>");
- if(nx){var floor=xpTotal({lvl:r.min,xp:0}),goal=xpTotal({lvl:nx.min,xp:0});
-  var prog=ATTRS.reduce(function(sum,a){return sum+Math.max(0,Math.min(1,(xpTotal(S.attrs[a.k])-floor)/(goal-floor)))},0)/ATTRS.length;
-  el("gate-txt").textContent="Rank atual: "+r.r+" → Próximo: "+nx.r+" · nível "+nx.min+" em todos";
-  el("gate-bar").style.width=(prog*100).toFixed(1)+"%";
- }else{el("gate-txt").textContent="Rank atual: S · rank máximo";el("gate-bar").style.width="100%"}
+ var prog=Math.max(0,Math.min(1,r.xp/r.required));
+ el("gate-txt").textContent="Rank "+r.r+" → "+(r.r+1)+" · "+r.xp+" / "+r.required+" XP";
+ el("gate-bar").style.width=(prog*100).toFixed(1)+"%";
+ var gate=el("gate-meter");
+ gate.setAttribute("aria-valuenow",String(r.xp));
+ gate.setAttribute("aria-valuemax",String(r.required));
+ gate.setAttribute("aria-valuetext",r.xp+" de "+r.required+" XP para o Rank "+(r.r+1));
  el("today-str").textContent=new Date().toLocaleDateString("pt-BR",{weekday:"long",day:"2-digit",month:"long"});
  el("daily-count").textContent=doneCount()+" / "+ATTRS.length;
  el("write-date").textContent=br(S.day.date);

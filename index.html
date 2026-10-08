@@ -74,14 +74,14 @@
         <div class="tally">Nível total <b id="c-lvl">5</b></div>
         <div class="tally hot"><svg viewBox="0 0 24 24"><use href="#i-gold"/></svg><b id="c-gold">0</b></div>
         <div class="tally off" id="c-streak">Sequência 0 dias</div>
-        <div class="tally">Rank <b id="rank-letter">E</b></div>
+        <div class="tally">Rank <b id="rank-letter">1</b></div>
       </div>
     </div>
   </div>
 
   <div class="gate">
-    <div><div class="lab">Próximo portão</div><div class="val" id="gate-txt">—</div></div>
-    <div class="grow"><i id="gate-bar" style="width:0%"></i></div>
+    <div><div class="lab">Evolução do rank</div><div class="val" id="gate-txt">—</div></div>
+    <div class="grow" id="gate-meter" role="progressbar" aria-label="Progresso do rank" aria-valuemin="0" aria-valuemax="40" aria-valuenow="0"><i id="gate-bar" style="width:0%"></i></div>
   </div>
 
   <div class="tabs" role="tablist">
@@ -126,7 +126,7 @@
         <b>Rituais da semana.</b> O encontro com a Gi vale <code>+30 XP</code> e <code>+60 ouro</code>; a checagem de segunda, <code>+15 XP</code> e <code>+25 ouro</code>; planejar as jantas, <code>+20 ouro</code>.<br>
         <b>Penalidade.</b> Só há desconto em dias sem nenhuma missão diária concluída: <code>−6 XP</code> em cada atributo e a sequência zera. Concluiu pelo menos uma? Sem penalidade.<br>
         <b>Folga.</b> Um dia por semana não gera penalidade nenhuma. O sistema aplica sozinho no seu pior dia — o fim de semana faz parte do plano, não é a falha dele.<br>
-        <b>Portão de rank.</b> O rank é o do seu atributo <b>mais fraco</b>. <code>D</code> pede nível 5 em tudo, <code>C</code> nível 10, <code>B</code> nível 18, <code>A</code> nível 28, <code>S</code> nível 40.
+        <b>Rank.</b> Começa em 1 e cresce com o XP total dos cinco atributos, sem limite fixo. O primeiro avanço pede <code>40 XP</code>; cada próximo pede <code>20 XP</code> a mais. O XP continua contando mesmo com atributos no nível 99.
         <div class="cite">As páginas matinais, a checagem semanal e as doze semanas vêm de <i>O Caminho do Artista</i>, de Julia Cameron — adaptadas ao seu tamanho, não copiadas.</div>
       </div>
     </section>
