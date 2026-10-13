@@ -391,12 +391,12 @@ function renderHead(){
  el("arc").innerHTML=(S.week.n>12?"Pós-jornada · semana "+S.week.n+" · <b>"+esc(JOURNEY[11][0])+" (de novo)</b>"
    :"Semana "+S.week.n+" de 12 · <b>Recuperando o senso de "+esc(JOURNEY[j-1][0].toLowerCase())+"</b>");
  var prog=Math.max(0,Math.min(1,r.xp/r.required));
- el("gate-txt").textContent="Rank "+r.r+" → "+(r.r+1)+" · "+r.xp+" / "+r.required+" XP";
+ el("gate-txt").textContent="Rank "+r.r+" · "+r.xp+" / "+r.required+" XP";
  el("gate-bar").style.width=(prog*100).toFixed(1)+"%";
  var gate=el("gate-meter");
  gate.setAttribute("aria-valuenow",String(r.xp));
  gate.setAttribute("aria-valuemax",String(r.required));
- gate.setAttribute("aria-valuetext",r.xp+" de "+r.required+" XP para o Rank "+(r.r+1));
+ gate.setAttribute("aria-valuetext","Rank "+r.r+", "+r.xp+" de "+r.required+" XP");
  el("today-str").textContent=new Date().toLocaleDateString("pt-BR",{weekday:"long",day:"2-digit",month:"long"});
  el("daily-count").textContent=doneCount()+" / "+ATTRS.length;
  el("write-date").textContent=br(S.day.date);
