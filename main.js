@@ -299,16 +299,14 @@ var AVATAR_CLASSES=[
  {slug:"patrulheiro",name:"Patrulheiro",accent:"#947020",soft:"#F3ECD6",color:"ocre",weapon:"Arco e aljava",steps:["Primeira luva","Botas","Colete","Luvas e cinto","Chapéu","Capa","Arco e aljava"]}
 ];
 function totalLevels(){return ATTRS.reduce(function(n,a){return n+S.attrs[a.k].lvl},0)}
-function levelPieces(){return totalLevels()-ATTRS.length}
 function normalizeAvatar(old){
  old=old&&typeof old==="object"?old:{};
  var marks=Math.max(0,Math.floor(Number(old.marks)||0));
  var points=(old.v===2||old.v===3||old.v===4)?Math.max(0,Math.floor(Number(old.points)||0)):
    Math.floor(marks/12)*AVATAR_CLASS_POINTS+Math.ceil((marks%12)*7/12)*AVATAR_STEP;
  var seen=old.seen&&typeof old.seen==="object"&&!Array.isArray(old.seen)?Object.assign({},old.seen):{};
- // Carry over existing visual unlocks once. New unlocks come only from attribute levels.
- if(!seen.__levelProgression){seen.__legacyPieces=Math.floor(points/AVATAR_STEP);seen.__levelProgression=true}
- seen.__legacyPieces=Math.max(0,Math.floor(Number(seen.__legacyPieces)||0));
+ delete seen.__legacyPieces;
+ seen.__levelProgression=true;
  var selected=(old.v===2||old.v===3||old.v===4)?old.equipped:old.view;
  return {v:4,marks:marks,points:points,seen:seen,equipped:Number.isInteger(selected)?selected:-1};
 }
@@ -331,14 +329,12 @@ function removeAvatarMark(){reconcileAvatarMarks()}
 function reconcileAvatarMarks(){
  if(!S.avatar)return;
  if(!S.avatar.seen.__levelProgression)S.avatar=normalizeAvatar(S.avatar);
- S.avatar.points=Math.max(levelPieces(),S.avatar.seen.__legacyPieces)*AVATAR_STEP;
+ S.avatar.points=rank().r*AVATAR_STEP;
  if(S.avatar.equipped>=Math.floor(S.avatar.points/AVATAR_CLASS_POINTS))S.avatar.equipped=-1;
 }
 function nextPieceProgress(){
- var pieces=S.avatar.points/AVATAR_STEP,levels=totalLevels();
- var target=ATTRS.length+pieces+1;
- var fraction=ATTRS.reduce(function(best,a){var v=S.attrs[a.k];return Math.max(best,v.lvl>=MAX_LEVEL?0:v.xp/need(v.lvl))},0);
- return {target:target,percent:Math.max(0,Math.min(100,(pieces===levelPieces()?fraction:(levelPieces()+fraction)/(pieces+1))*100)),max:levels>=ATTRS.length*MAX_LEVEL};
+ var r=rank();
+ return {target:r.r+1,percent:Math.max(0,Math.min(100,r.xp/r.required*100))};
 }
 function renderAvatar(){
  reconcileAvatarMarks();
@@ -354,16 +350,16 @@ function renderAvatar(){
  el("avatar-art").setAttribute("aria-label","Cachorrinho "+set.name.toLowerCase()+", "+stage+" de 7 melhorias, destaque "+set.color);
  el("avatar-tier").textContent=stage===7?"Classe completa · "+set.color:"Em formação · "+set.color;
  el("avatar-status").textContent=stage===0&&display===0?"Pequeno aventureiro":set.name;
- el("avatar-count").textContent="Nível total "+totalLevels()+" / "+(ATTRS.length*MAX_LEVEL);
- el("avatar-equipped-note").textContent=equipped>=0?"Conjunto do armário equipado.":"O visual acompanha os níveis dos seus atributos.";
+ el("avatar-count").textContent="Rank "+rank().r+" · "+rank().r+" peça"+(rank().r===1?"":"s");
+ el("avatar-equipped-note").textContent=equipped>=0?"Conjunto do armário equipado.":"O visual acompanha seu rank.";
  el("avatar-training").textContent="Em evolução · "+training.name;
  var progress=nextPieceProgress();
- el("avatar-bar").style.width=(progress.max?100:progress.percent)+"%";
- var meter=el("avatar-meter");meter.setAttribute("aria-valuemax","100");meter.setAttribute("aria-valuenow",String(progress.max?100:Math.floor(progress.percent)));
- meter.setAttribute("aria-valuetext",progress.max?"Todos os atributos no nível 99":"Próxima peça no nível total "+progress.target);
- el("avatar-next").textContent=progress.max?"Todos os atributos no nível 99. Jornada completa!":
-   current.stage===7?"Próxima classe: "+avatarSet(current.index+1).name+". Primeira peça no nível total "+progress.target+".":
-   training.steps[current.stage]+" no nível total "+progress.target+". Ganhe níveis em qualquer atributo.";
+ el("avatar-bar").style.width=progress.percent+"%";
+ var meter=el("avatar-meter");meter.setAttribute("aria-valuemax","100");meter.setAttribute("aria-valuenow",String(Math.floor(progress.percent)));
+ meter.setAttribute("aria-valuetext","Próxima peça no Rank "+progress.target);
+ el("avatar-next").textContent=
+   current.stage===7?"Próxima classe: "+avatarSet(current.index+1).name+". Primeira peça no Rank "+progress.target+".":
+   training.steps[current.stage]+" no Rank "+progress.target+".";
  el("avatar-steps").innerHTML=training.steps.map(function(name,i){return '<li class="'+(i<current.stage?'earned':i===current.stage?'next':'')+'"><span aria-hidden="true">'+(i<current.stage?'✓':i+1)+'</span>'+esc(name)+(i<current.stage?'<span class="sr-only"> conquistada</span>':'')+'</li>'}).join("");
  el("avatar-roadmap").innerHTML=AVATAR_CLASSES.map(function(c,i){return '<span'+(i===current.index%3?' aria-current="step"':'')+'>'+c.name+'</span>'}).join('<i aria-hidden="true">→</i>');
  var host=el("wardrobe");host.innerHTML="";
