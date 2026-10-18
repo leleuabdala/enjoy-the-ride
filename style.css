@@ -343,3 +343,20 @@ h1,h2,h3{font-family:"Fraunces",Georgia,serif;font-weight:700;margin:0;letter-sp
 .auth-signout{position:fixed;right:18px;bottom:18px;z-index:20;background:var(--paper)}
 @media(max-width:480px){.auth-gate{padding:16px}.auth-card{padding:30px 24px}.auth-card h1{font-size:27px}}
 
+
+
+/* Independent affirmation practice */
+.modes{flex-wrap:wrap}
+.affirm-toolbar,.affirm-create{display:grid;gap:10px;margin-bottom:24px}
+.affirm-row{display:flex;gap:12px;align-items:center}
+.affirm-row input,.affirm-toolbar select{min-width:0;width:100%;padding:12px;border:1px solid currentColor;border-radius:4px;background:transparent;color:inherit;font:inherit}
+.affirm-row .btn{flex-shrink:0}
+.affirm-phrase{font-size:1.25rem;line-height:1.6;overflow-wrap:anywhere}
+.affirm-pad{min-height:150px;height:180px;margin-top:10px}
+.affirm-footer{display:flex;align-items:center;gap:16px;min-height:56px}
+.affirm-footer b{white-space:nowrap;font-variant-numeric:tabular-nums;min-width:6ch}
+.affirm-footer progress{flex:1;min-width:30px;width:100%;accent-color:currentColor}
+.affirm-footer .btn{min-width:100px}
+.affirm-status{min-height:3em;margin:12px 0;line-height:1.5}
+#mode-affirm button:disabled{opacity:.55;cursor:default}
+@media(max-width:480px){.affirm-row{flex-wrap:wrap}.affirm-footer{gap:10px}}

@@ -209,13 +209,14 @@
 
   <div id="tab-escrita" hidden>
     <section class="sec">
-      <div class="sec-h"><h2>Páginas matinais</h2><div class="note" id="write-date">—</div></div>
-      <p class="sec-sub">Fluxo contínuo. Não releia, não edite, não julgue — se não vier nada, escreva que não vem nada até encher.</p>
-      <div id="write-live">
+      <div class="sec-h"><h2 id="writing-title">Páginas matinais</h2><div class="note" id="write-date">—</div></div>
+      <p class="sec-sub" id="writing-sub">Fluxo contínuo. Não releia, não edite, não julgue — se não vier nada, escreva que não vem nada até encher.</p>
         <div class="modes" role="group" aria-label="Modo de escrita">
           <button id="m-key" aria-pressed="true">Teclado</button>
           <button id="m-pen" aria-pressed="false">Caneta</button>
+          <button id="m-affirm" aria-pressed="false">Afirmações</button>
         </div>
+      <div id="write-live">
         <div id="mode-key">
           <textarea class="pad" id="pad" placeholder="Escreva sem parar. Não releia."></textarea>
           <div class="pad-foot">
@@ -242,13 +243,31 @@
         </div>
         <div style="margin-top:20px"><button class="btn solid" id="write-close">Fechar as páginas de hoje</button></div>
       </div>
+      <div id="mode-affirm" hidden>
+        <div class="affirm-toolbar"><label for="affirm-select">Suas afirmações</label><select id="affirm-select" disabled><option>Carregando…</option></select></div>
+        <form id="affirm-create" class="affirm-create">
+          <label for="affirm-new">Nova afirmação</label>
+          <div class="affirm-row"><input id="affirm-new" maxlength="280" placeholder="Ex.: Eu gosto de falar em público" required><button class="btn quiet" id="affirm-add" disabled>Criar</button></div>
+        </form>
+        <div id="affirm-session" hidden>
+          <p id="affirm-phrase" class="affirm-phrase"></p>
+          <label for="affirm-input">Escreva sua afirmação</label>
+          <form id="affirm-send-form">
+            <textarea class="pad affirm-pad" id="affirm-input" maxlength="560" placeholder="Digite a frase acima. Enter para enviar." aria-describedby="affirm-help"></textarea>
+            <div class="affirm-footer"><b id="affirm-count" aria-live="polite">0 / 100</b><progress id="affirm-progress" max="100" value="0" aria-label="Repetições concluídas"></progress><button class="btn solid" id="affirm-send">Enviar</button></div>
+          </form>
+          <p class="note" id="affirm-help">Enter envia · Shift + Enter quebra a linha. Cada frase tem seu próprio progresso.</p>
+        </div>
+        <p id="affirm-status" class="affirm-status" role="status" aria-live="polite"></p>
+        <button class="btn quiet" id="affirm-retry" hidden>Tentar carregar novamente</button>
+      </div>
       <div id="write-done" class="closed" hidden>
         <h3>Páginas fechadas.</h3>
         <p id="write-done-sub">Arquivado. Amanhã tem folha nova.</p>
         <div style="margin-top:16px"><button class="btn quiet" id="write-reopen">Reabrir</button></div>
       </div>
     </section>
-    <section class="sec">
+    <section class="sec" id="writing-archive">
       <div class="sec-h"><h2>Arquivo</h2><div class="note" id="arch-tag">—</div></div>
       <div class="hr"></div>
       <div id="seal-note" class="seal-note" hidden><b>Arquivo selado.</b> O livro pede que você não releia nas primeiras oito semanas — na Semana 9 a tarefa é reler tudo de uma vez, com duas canetas: uma para descobertas, outra para ações. O selo abre sozinho lá.</div>
@@ -334,4 +353,5 @@
 <script type="module" src="/main.js"></script>
 </body>
 </html>
+
 

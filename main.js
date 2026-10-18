@@ -1,7 +1,10 @@
 import { supabase } from './supabase-client.js'
+import { createAffirmations } from './affirmations.js'
 
 (function(){
 "use strict";
+var affirmMode=false;
+var affirmations=createAffirmations(supabase);
 
 var ATTRS=[
  {k:"for",n:"Força",     d:"treino",          i:"i-for", q:"Treinar (academia ou sessão em casa)"},
@@ -570,8 +573,8 @@ function renderLog(){
 function renderPad(){
  var p=el("pad");if(document.activeElement!==p)p.value=S.day.text||"";
  el("wgoal").value=S.goal;updateWc();
- el("write-live").hidden=!!S.day.closed;
- el("write-done").hidden=!S.day.closed;
+ el("write-live").hidden=affirmMode||!!S.day.closed;
+ el("write-done").hidden=affirmMode||!S.day.closed;
 }
 function updateWc(){
  var w=words(el("pad").value),g=S.goal,wc=el("wc");
@@ -579,7 +582,7 @@ function updateWc(){
  el("wbar").style.width=Math.min(100,w/g*100).toFixed(1)+"%";
 }
 function renderAll(){renderHead();renderCards();renderAttrs();renderBonus();renderWeek();renderShop();renderLog();renderPad();renderAvatar();
- if(window.__penReady)setMode(S.writeMode)}
+ if(window.__penReady)setMode(affirmMode?"affirm":S.writeMode)}
 
 /* ===== ações ===== */
 function toggle(k){
@@ -891,12 +894,19 @@ var PEN=(function(){
 })();
 
 function setMode(m){
- S.writeMode=(m==="pen")?"pen":"key";
- el("m-key").setAttribute("aria-pressed",S.writeMode==="key"?"true":"false");
- el("m-pen").setAttribute("aria-pressed",S.writeMode==="pen"?"true":"false");
+ affirmMode=m==="affirm";
+ if(!affirmMode)S.writeMode=(m==="pen")?"pen":"key";
+ el("m-affirm").setAttribute("aria-pressed",String(affirmMode));
+ el("mode-affirm").hidden=!affirmMode;
+ el("writing-archive").hidden=affirmMode;
+ el("writing-title").textContent=affirmMode?"Afirmações":"Páginas matinais";
+ el("writing-sub").textContent=affirmMode?"Uma frase, uma repetição por vez. Continue de onde parou até chegar a 100.":"Fluxo contínuo. Não releia, não edite, não julgue — se não vier nada, escreva que não vem nada até encher.";
+ renderPad();
+ el("m-key").setAttribute("aria-pressed",!affirmMode&&S.writeMode==="key"?"true":"false");
+ el("m-pen").setAttribute("aria-pressed",!affirmMode&&S.writeMode==="pen"?"true":"false");
  el("mode-key").hidden=(S.writeMode!=="key");
  el("mode-pen").hidden=(S.writeMode!=="pen");
- if(S.writeMode==="pen")requestAnimationFrame(PEN.fit);
+ if(!affirmMode&&S.writeMode==="pen")requestAnimationFrame(PEN.fit);
  if(BOOTED)save();
 }
 function replayCanvas(pages){
@@ -949,6 +959,7 @@ el("dish-do").addEventListener("click",toggleDishDo);
 el("ad-check").addEventListener("click",toggleAD);
 el("ci-check").addEventListener("click",toggleCI);
 el("meal-save").addEventListener("click",saveMeals);
+el("m-affirm").addEventListener("click",function(){setMode("affirm")});
 el("m-key").addEventListener("click",function(){setMode("key")});
 el("m-pen").addEventListener("click",function(){setMode("pen")});
 el("write-close").addEventListener("click",closeWriting);
@@ -1037,12 +1048,13 @@ var authStarted=false;
 async function startForSession(session){
  if(authStarted||!session||!session.user)return;authStarted=true;
  try{await loadCloud(session.user)}catch(e){console.error("Falha ao carregar Supabase",e);authStarted=false;toast("Não foi possível sincronizar","Recarregue para tentar novamente. Nenhuma penalidade foi calculada.");return}
- afterLoad();loadEntries();
+ afterLoad();loadEntries();affirmations.connect(session.user);
 }
 window.addEventListener("etr:auth",function(e){var s=e.detail&&e.detail.session;if(s)startForSession(s)});
 if(window.ETR_USER)startForSession({user:window.ETR_USER});
 
 
 })();
+
 
 
