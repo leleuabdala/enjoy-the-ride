@@ -360,3 +360,10 @@ h1,h2,h3{font-family:"Fraunces",Georgia,serif;font-weight:700;margin:0;letter-sp
 .affirm-status{min-height:3em;margin:12px 0;line-height:1.5}
 #mode-affirm button:disabled{opacity:.55;cursor:default}
 @media(max-width:480px){.affirm-row{flex-wrap:wrap}.affirm-footer{gap:10px}}
+
+
+/* Keep writing help steady while switching prompts. */
+.writing-help{margin-bottom:18px}
+.writing-help-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;min-height:44px}
+.writing-prompt{margin:10px 0 0;min-height:6.4em;font-size:16px;line-height:1.6;color:var(--ink-2);overflow-wrap:anywhere}
+#writing-prompt-hide[hidden]{display:none}

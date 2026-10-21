@@ -1,8 +1,10 @@
 import { supabase } from './supabase-client.js'
 import { createAffirmations } from './affirmations.js'
+import { initWritingPrompts } from './writing-prompts.js'
 
 (function(){
 "use strict";
+initWritingPrompts();
 var affirmMode=false;
 var affirmations=createAffirmations(supabase);
 
@@ -572,14 +574,8 @@ function renderLog(){
 
 function renderPad(){
  var p=el("pad");if(document.activeElement!==p)p.value=S.day.text||"";
- el("wgoal").value=S.goal;updateWc();
  el("write-live").hidden=affirmMode||!!S.day.closed;
  el("write-done").hidden=affirmMode||!S.day.closed;
-}
-function updateWc(){
- var w=words(el("pad").value),g=S.goal,wc=el("wc");
- wc.innerHTML="<b>"+w+"</b> / "+g+" palavras";wc.className="wc"+(w>=g?" hit":"");
- el("wbar").style.width=Math.min(100,w/g*100).toFixed(1)+"%";
 }
 function renderAll(){renderHead();renderCards();renderAttrs();renderBonus();renderWeek();renderShop();renderLog();renderPad();renderAvatar();
  if(window.__penReady)setMode(affirmMode?"affirm":S.writeMode)}
@@ -702,14 +698,14 @@ function buy(r){
 }
 function closeWriting(){
  var w=words(S.day.text),pen=(S.writeMode==="pen");
- if(!pen&&w<40){toast("Pouca coisa","Escreve mais um pouco antes de fechar.");return}
+ if(!pen&&!S.day.text.trim()){toast("Página em branco","Escreva algo antes de fechar as páginas.");return}
  S.day.closed=true;
  if(!S.day.done.men)toggle("men");
  if(S.day.text&&S.day.text.trim())archiveDay({date:S.day.date,text:S.day.text,words:w,week:S.week.n});
  if(pen)PEN.flush();
  el("write-done-sub").textContent=pen
   ? "Arquivado à mão. Amanhã tem folha nova."
-  : w+" palavras arquivadas. Amanhã tem folha nova.";
+  : "Arquivado. Amanhã tem folha nova.";
  save();renderPad();renderHead();
 }
 
@@ -744,7 +740,7 @@ function loadEntries(){
   (res.data||[]).forEach(function(d){
    var pen=(d.mode==="pen"&&Array.isArray(d.pen_pages));if(!d.text_content&&!pen)return;any=true;
    var det=document.createElement("details");det.className="entry";
-   var meta=pen?"à mão":((d.word_count||0)+" palavras");
+   var meta=pen?"à mão":"digitado";
    det.innerHTML='<summary><b>'+br(String(d.entry_date))+'</b><span>'+meta+(sealed?' · selado':'')+'</span></summary><div class="body"></div>';
    var body=det.querySelector(".body");
    if(sealed){body.innerHTML='<div class="sealed"><span>Selado até a Semana '+UNSEAL_WEEK+'.</span><button class="btn quiet">Quebrar o selo</button></div>';body.querySelector("button").addEventListener("click",function(){S.unsealed=true;save();renderHead();loadEntries();toast("Selo quebrado","O arquivo está aberto.")})}
@@ -900,7 +896,7 @@ function setMode(m){
  el("mode-affirm").hidden=!affirmMode;
  el("writing-archive").hidden=affirmMode;
  el("writing-title").textContent=affirmMode?"Afirmações":"Páginas matinais";
- el("writing-sub").textContent=affirmMode?"Uma frase, uma repetição por vez. Continue de onde parou até chegar a 100.":"Fluxo contínuo. Não releia, não edite, não julgue — se não vier nada, escreva que não vem nada até encher.";
+ el("writing-sub").textContent=affirmMode?"Uma frase, uma repetição por vez. Continue de onde parou até chegar a 100.":"Escreva livremente, no seu ritmo. Quando quiser explorar um assunto, toque em Quero aprofundar.";
  renderPad();
  el("m-key").setAttribute("aria-pressed",!affirmMode&&S.writeMode==="key"?"true":"false");
  el("m-pen").setAttribute("aria-pressed",!affirmMode&&S.writeMode==="pen"?"true":"false");
@@ -941,12 +937,10 @@ Array.prototype.forEach.call(document.querySelectorAll('[role="tab"]'),function(
  });
 });
 el("pad").addEventListener("input",function(){
- S.day.text=el("pad").value;updateWc();el("saved").textContent="salvando…";
+ S.day.text=el("pad").value;el("saved").textContent="salvando…";
  clearTimeout(padTimer);
  padTimer=setTimeout(function(){save();el("saved").textContent="salvo"},1200);
 });
-el("wgoal").addEventListener("change",function(){
- var v=Math.max(100,Math.min(2000,+el("wgoal").value||750));S.goal=v;el("wgoal").value=v;updateWc();save()});
 function bindField(id,setter){
  el(id).addEventListener("input",function(){setter(el(id).value);clearTimeout(fieldTimer);fieldTimer=setTimeout(save,900)})}
 bindField("ad-note",function(v){S.week.adNote=v});
@@ -1055,6 +1049,7 @@ if(window.ETR_USER)startForSession({user:window.ETR_USER});
 
 
 })();
+
 
 
 

@@ -210,20 +210,23 @@
   <div id="tab-escrita" hidden>
     <section class="sec">
       <div class="sec-h"><h2 id="writing-title">Páginas matinais</h2><div class="note" id="write-date">—</div></div>
-      <p class="sec-sub" id="writing-sub">Fluxo contínuo. Não releia, não edite, não julgue — se não vier nada, escreva que não vem nada até encher.</p>
+      <p class="sec-sub" id="writing-sub">Escreva livremente, no seu ritmo. Quando quiser explorar um assunto, toque em Quero aprofundar.</p>
         <div class="modes" role="group" aria-label="Modo de escrita">
           <button id="m-key" aria-pressed="true">Teclado</button>
           <button id="m-pen" aria-pressed="false">Caneta</button>
           <button id="m-affirm" aria-pressed="false">Afirmações</button>
         </div>
       <div id="write-live">
+        <div class="writing-help">
+          <div class="writing-help-actions">
+            <button type="button" class="btn quiet" id="writing-deepen" aria-controls="writing-prompt" aria-expanded="false">Quero aprofundar</button>
+            <button type="button" class="btn quiet" id="writing-prompt-hide" hidden>Ocultar pergunta</button>
+          </div>
+          <p id="writing-prompt" class="writing-prompt" aria-live="polite" aria-atomic="true"></p>
+        </div>
         <div id="mode-key">
-          <textarea class="pad" id="pad" placeholder="Escreva sem parar. Não releia."></textarea>
+          <textarea class="pad" id="pad" placeholder="O que está passando pela sua cabeça?"></textarea>
           <div class="pad-foot">
-            <div class="wc" id="wc"><b>0</b> / 750 palavras</div>
-            <div class="wprog"><i id="wbar" style="width:0%"></i></div>
-            <label class="wc" style="display:flex;gap:8px;align-items:center">meta
-              <input id="wgoal" class="numin" type="number" min="100" max="2000" step="50" value="750"></label>
             <span class="wc" id="saved">salvo</span>
           </div>
         </div>
@@ -353,5 +356,6 @@
 <script type="module" src="/main.js"></script>
 </body>
 </html>
+
 
 
