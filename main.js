@@ -1,6 +1,7 @@
 import { supabase } from './supabase-client.js'
 import { createAffirmations } from './affirmations.js'
 import { initWritingPrompts } from './writing-prompts.js'
+import { previousReviewPeriod, countWritingDays } from './weekly-review.js'
 
 (function(){
 "use strict";
@@ -486,12 +487,38 @@ function renderBonus(){
  });
 }
 
+var REVIEW_COUNT={key:"",count:null,loading:false,error:false,request:0};
+function renderReviewCount(){
+ var period=previousReviewPeriod(today());
+ el("ci-period").textContent="Semana revisada: "+br(period.start)+" a "+br(period.end)+" (segunda a domingo).";
+ var label=el("ci-auto");
+ if(REVIEW_COUNT.key!==period.start){
+  REVIEW_COUNT.key=period.start;REVIEW_COUNT.count=null;REVIEW_COUNT.error=false;REVIEW_COUNT.loading=false;
+ }
+ label.textContent=REVIEW_COUNT.loading?"— carregando semana anterior…":REVIEW_COUNT.error?"— não foi possível carregar o total":REVIEW_COUNT.count===null?"— aguardando registros":"— o sistema contou "+REVIEW_COUNT.count+(REVIEW_COUNT.count===1?" dia":" dias");
+ el("ci-retry").hidden=!REVIEW_COUNT.error;
+ if(!CLOUD_USER||REVIEW_COUNT.loading||REVIEW_COUNT.error||REVIEW_COUNT.count!==null)return;
+ var uid=CLOUD_USER.id,request=++REVIEW_COUNT.request;
+ REVIEW_COUNT.loading=true;label.textContent="— carregando semana anterior…";
+ Promise.all([
+  supabase.from("daily_entries").select("entry_date,done").eq("user_id",uid).gte("entry_date",period.start).lte("entry_date",period.end),
+  supabase.from("journal_entries").select("entry_date,closed").eq("user_id",uid).gte("entry_date",period.start).lte("entry_date",period.end)
+ ]).then(function(results){
+  if(request!==REVIEW_COUNT.request||REVIEW_COUNT.key!==period.start)return;
+  var failed=results.find(function(r){return r.error});if(failed)throw failed.error;
+  REVIEW_COUNT.count=countWritingDays(results[0].data||[],results[1].data||[],period);
+  REVIEW_COUNT.loading=false;renderReviewCount();
+ }).catch(function(){
+  if(request!==REVIEW_COUNT.request||REVIEW_COUNT.key!==period.start)return;
+  REVIEW_COUNT.loading=false;REVIEW_COUNT.error=true;renderReviewCount();
+ });
+}
 function renderWeek(){
  el("ad-check").setAttribute("aria-pressed",S.week.ad?"true":"false");
  el("ci-check").setAttribute("aria-pressed",S.week.ciDone?"true":"false");
  if(document.activeElement!==el("ad-note"))el("ad-note").value=S.week.adNote||"";
  ["a","b","c"].forEach(function(k){var f=el("ci-"+k);if(document.activeElement!==f)f.value=S.week.ci[k]||""});
- el("ci-auto").textContent="— o sistema contou "+S.week.wrote+(S.week.wrote===1?" dia":" dias");
+ renderReviewCount();
  el("dish-pick").setAttribute("aria-pressed",S.week.dishPicked?"true":"false");
  el("dish-do").setAttribute("aria-pressed",S.week.dishDone?"true":"false");
  if(document.activeElement!==el("dish-name"))el("dish-name").value=S.week.dish||"";
@@ -952,6 +979,7 @@ el("dish-pick").addEventListener("click",toggleDishPick);
 el("dish-do").addEventListener("click",toggleDishDo);
 el("ad-check").addEventListener("click",toggleAD);
 el("ci-check").addEventListener("click",toggleCI);
+el("ci-retry").addEventListener("click",function(){REVIEW_COUNT.error=false;REVIEW_COUNT.count=null;renderReviewCount()});
 el("meal-save").addEventListener("click",saveMeals);
 el("m-affirm").addEventListener("click",function(){setMode("affirm")});
 el("m-key").addEventListener("click",function(){setMode("key")});

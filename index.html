@@ -151,16 +151,18 @@
         <div class="ico"><svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><use href="#i-check"/></svg></div>
         <div>
           <h3>Checagem de segunda</h3>
-          <p>Vinte minutos olhando pra trás. Se você esqueceu de marcar alguma coisa durante a semana, é aqui que você conserta — volte na aba Hoje e marque, o sistema aceita.</p>
+          <p>Vinte minutos para olhar a semana que terminou. Reflita sobre a segunda a domingo anteriores; as atividades de hoje entram na próxima checagem.</p>
+          <p class="note" id="ci-period"></p>
           <span class="pay">+15 mente · +25 ouro</span>
           <label class="qlab">1. Quantos dias de páginas matinais? <span id="ci-auto"></span></label>
+          <button type="button" class="btn quiet" id="ci-retry" hidden>Tentar carregar o total novamente</button>
           <textarea class="field" id="ci-a" rows="2" placeholder="Como foi a experiência?"></textarea>
           <label class="qlab">2. O que você fez de entrada criativa?</label>
           <textarea class="field" id="ci-b" rows="2" placeholder="O que você olhou, leu, ouviu. E o que ficou."></textarea>
           <label class="qlab">3. Aconteceu algo significativo?</label>
           <textarea class="field" id="ci-c" rows="2" placeholder="Descobertas, coincidências, o que mudou."></textarea>
         </div>
-        <button class="mark" id="ci-check" aria-pressed="false" aria-label="Fechar checagem da semana">
+        <button class="mark" id="ci-check" aria-pressed="false" aria-label="Concluir revisão da semana anterior">
           <svg viewBox="0 0 24 24"><polyline points="4,12.5 9.5,18 20,6"></polyline></svg></button>
       </div>
     </section>
