@@ -2,99 +2,111 @@ export const normalizeAffirmation = text => text.trim().replace(/\s+/gu, ' ').to
 
 export function createAffirmations(client) {
   const el = id => document.getElementById(id);
-  let user, rows = [], activeId = '', busy = false, ready = false, pending = null;
-  const drafts = new Map();
-  const active = () => rows.find(row => row.id === activeId);
+  let user = null, rows = [], busy = false, ready = false;
+
   const status = message => { el('affirm-status').textContent = message; };
+
   function render() {
-    const row = active();
-    el('affirm-select').replaceChildren();
-    if (!rows.length) el('affirm-select').add(new Option(ready ? 'Crie sua primeira afirmação' : 'Carregando…', ''));
-    rows.forEach(item => el('affirm-select').add(new Option(`${item.phrase} · ${item.repetitions}/100`, item.id)));
-    el('affirm-select').value = activeId;
-    el('affirm-select').disabled = busy || !rows.length;
-    el('affirm-add').disabled = busy || !ready;
-    el('affirm-new').disabled = busy || !ready;
-    el('affirm-session').hidden = !row;
-    if (!row) return;
-    el('affirm-phrase').textContent = row.phrase;
-    el('affirm-count').textContent = `${row.repetitions} / 100`;
-    el('affirm-progress').value = row.repetitions;
-    el('affirm-send').disabled = busy || row.repetitions >= 100;
-    el('affirm-input').disabled = busy || row.repetitions >= 100;
-    el('affirm-send').textContent = busy ? 'Enviando…' : 'Enviar';
+    const count = rows.length;
+    el('affirm-count').textContent = `${count} / 100`;
+    el('affirm-progress').max = 100;
+    el('affirm-progress').value = count;
+    el('affirm-add').disabled = busy || !ready || count >= 100;
+    el('affirm-new').disabled = busy || !ready || count >= 100;
+
+    const list = el('affirm-list');
+    list.replaceChildren();
+
+    if (!count) {
+      const empty = document.createElement('p');
+      empty.className = 'muted';
+      empty.textContent = ready ? 'Sua lista ainda está vazia. Escreva a primeira afirmação acima.' : 'Carregando suas afirmações…';
+      list.append(empty);
+      return;
+    }
+
+    rows.forEach((item, index) => {
+      const entry = document.createElement('div');
+      entry.className = 'affirm-entry';
+      const number = document.createElement('span');
+      number.className = 'affirm-entry-number';
+      number.textContent = String(index + 1).padStart(2, '0');
+      const phrase = document.createElement('p');
+      phrase.textContent = item.phrase;
+      entry.append(number, phrase);
+      list.append(entry);
+    });
   }
+
   async function connect(account) {
     user = account;
     ready = false;
     el('affirm-retry').hidden = true;
     render();
     try {
-      const { data, error } = await client.from('affirmations').select('id,phrase,repetitions,created_at').eq('user_id', user.id).order('created_at');
+      const { data, error } = await client.from('affirmations')
+        .select('id,phrase,created_at')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: true });
       if (error) throw error;
-      rows = data;
-      activeId = rows.some(row => row.id === activeId) ? activeId : rows[0]?.id || '';
+      rows = data || [];
       ready = true;
-      status(active()?.repetitions === 100 ? '100 repetições concluídas. Você pode começar outra afirmação.' : 'Seu progresso fica salvo por afirmação, inclusive entre dias.');
+      status(rows.length >= 100
+        ? 'Você completou sua coleção de 100 afirmações!'
+        : 'Cada afirmação fica salva automaticamente na sua coleção.');
     } catch {
       status('Não foi possível carregar suas afirmações. Tente novamente.');
       el('affirm-retry').hidden = false;
     }
     render();
   }
+
   el('affirm-retry').addEventListener('click', () => connect(user));
-  el('affirm-select').addEventListener('change', event => {
-    drafts.set(activeId, el('affirm-input').value);
-    activeId = event.target.value;
-    pending = null;
-    el('affirm-input').value = drafts.get(activeId) || '';
-    status(active()?.repetitions === 100 ? '100 repetições concluídas!' : 'Continue de onde parou.');
-    render();
-  });
+
   el('affirm-create').addEventListener('submit', async event => {
     event.preventDefault();
     if (busy || !ready) return;
+
     const phrase = el('affirm-new').value.trim().replace(/\s+/gu, ' ');
     if (!phrase) return;
-    const existing = rows.find(row => normalizeAffirmation(row.phrase) === normalizeAffirmation(phrase));
-    if (existing) {
-      status('Essa afirmação já existe. Selecione-a acima para continuar seu contador.');
+
+    if (rows.length >= 100) {
+      status('Sua coleção já chegou a 100 afirmações!');
       return;
     }
-    busy = true; render(); status('Criando afirmação…');
-    try {
-      const { data, error } = await client.from('affirmations').insert({user_id:user.id, phrase}).select('id,phrase,repetitions,created_at').single();
-      if (error) throw error;
-      drafts.set(activeId, el('affirm-input').value);
-      rows.push(data); activeId = data.id; pending = null;
-      el('affirm-new').value = ''; el('affirm-input').value = '';
-      status('Afirmação criada. Seu novo contador começa em 0.');
-    } catch { status('Não foi possível criar. Tente novamente; se ela já foi salva, recarregue a página.'); }
-    busy = false; render(); el('affirm-input').focus();
-  });
-  async function send(event) {
-    event.preventDefault();
-    const row = active();
-    if (busy || !ready || !row || row.repetitions >= 100) return;
-    const text = el('affirm-input').value;
-    if (!text.trim()) { status('Digite sua afirmação antes de enviar.'); return; }
-    if (normalizeAffirmation(text) !== normalizeAffirmation(row.phrase)) {
-      status('Escreva a mesma frase da afirmação selecionada para contar a repetição.'); return;
+
+    const existing = rows.find(row => normalizeAffirmation(row.phrase) === normalizeAffirmation(phrase));
+    if (existing) {
+      status('Essa afirmação já está na sua lista. Escreva uma diferente para continuar.');
+      return;
     }
-    if (!pending || pending.affirmation !== row.id || pending.text !== text) pending = {affirmation:row.id, text, id:crypto.randomUUID()};
-    busy = true; render(); status('Salvando repetição…');
+
+    busy = true;
+    render();
+    status('Salvando afirmação…');
+
     try {
-      const { data, error } = await client.rpc('submit_affirmation', {p_id:row.id,p_submission:pending.id,p_text:text});
+      const { data, error } = await client.from('affirmations')
+        .insert({ user_id: user.id, phrase })
+        .select('id,phrase,created_at')
+        .single();
       if (error) throw error;
-      row.repetitions = data;
-      pending = null; drafts.delete(row.id); el('affirm-input').value = '';
-      status(data === 100 ? '100 repetições concluídas! Seu progresso está salvo.' : 'Repetição salva.');
-    } catch { status('Não foi possível confirmar o salvamento. Envie novamente para tentar, sem duplicar a repetição.'); }
-    busy = false; render(); el('affirm-input').focus();
-  }
-  el('affirm-send-form').addEventListener('submit', send);
-  el('affirm-input').addEventListener('keydown', event => {
-    if (event.key === 'Enter' && !event.shiftKey && !event.isComposing && !event.repeat) send(event);
+
+      rows.push(data);
+      el('affirm-new').value = '';
+      status(rows.length === 100
+        ? '100 afirmações! Você completou sua coleção.'
+        : `Afirmação salva! Faltam ${100 - rows.length} para completar as 100.`);
+    } catch (error) {
+      status(error?.code === '23505'
+        ? 'Essa afirmação já está na sua lista. Escreva uma diferente.'
+        : 'Não foi possível salvar. Tente novamente.');
+    }
+
+    busy = false;
+    render();
+    el('affirm-new').focus();
   });
+
   return { connect };
 }
