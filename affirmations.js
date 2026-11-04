@@ -11,8 +11,8 @@ export function createAffirmations(client) {
     el('affirm-count').textContent = `${count} / 100`;
     el('affirm-progress').max = 100;
     el('affirm-progress').value = count;
-    el('affirm-add').disabled = busy || !ready || count >= 100;
-    el('affirm-new').disabled = busy || !ready || count >= 100;
+    el('affirm-add').disabled = busy || count >= 100;
+    el('affirm-new').disabled = busy || count >= 100;
 
     const list = el('affirm-list');
     list.replaceChildren();
@@ -54,8 +54,11 @@ export function createAffirmations(client) {
       status(rows.length >= 100
         ? 'Você completou sua coleção de 100 afirmações!'
         : 'Cada afirmação fica salva automaticamente na sua coleção.');
-    } catch {
-      status('Não foi possível carregar suas afirmações. Tente novamente.');
+    } catch (error) {
+      console.error('Erro ao carregar afirmações:', error);
+      // Keep the form usable so a temporary read failure does not leave Add disabled.
+      ready = true;
+      status('Não consegui carregar a lista agora. Você ainda pode tentar adicionar uma afirmação; se falhar, confira sua conexão e tente novamente.');
       el('affirm-retry').hidden = false;
     }
     render();
@@ -65,7 +68,8 @@ export function createAffirmations(client) {
 
   el('affirm-create').addEventListener('submit', async event => {
     event.preventDefault();
-    if (busy || !ready) return;
+    if (busy) return;
+    if (!ready) { status('Aguarde um instante enquanto carrego suas afirmações.'); return; }
 
     const phrase = el('affirm-new').value.trim().replace(/\s+/gu, ' ');
     if (!phrase) return;
@@ -98,9 +102,10 @@ export function createAffirmations(client) {
         ? '100 afirmações! Você completou sua coleção.'
         : `Afirmação salva! Faltam ${100 - rows.length} para completar as 100.`);
     } catch (error) {
+      console.error('Erro ao salvar afirmação:', error);
       status(error?.code === '23505'
         ? 'Essa afirmação já está na sua lista. Escreva uma diferente.'
-        : 'Não foi possível salvar. Tente novamente.');
+        : `Não foi possível salvar: ${error?.message || 'tente novamente.'}`);
     }
 
     busy = false;
