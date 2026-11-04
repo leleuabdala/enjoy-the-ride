@@ -368,3 +368,22 @@ h1,h2,h3{font-family:"Fraunces",Georgia,serif;font-weight:700;margin:0;letter-sp
 .writing-prompt{margin:10px 0 0;font-size:16px;line-height:1.6;color:var(--ink-2);overflow-wrap:anywhere}
 .writing-prompt:empty{display:none}
 #writing-prompt-hide[hidden]{display:none}
+
+
+/* Affirmations: a simple 100-item collection */
+.affirm-heading{display:flex;justify-content:space-between;align-items:center;gap:18px;margin-bottom:12px}
+.affirm-heading h3{font-family:"Fraunces",serif;font-size:21px;font-weight:800}
+.affirm-heading p{margin-top:4px}
+.affirm-total{display:flex;flex-direction:column;align-items:flex-end;white-space:nowrap}
+.affirm-total b{font:700 22px "Courier Prime",monospace;color:var(--orange-2);font-variant-numeric:tabular-nums}
+.affirm-total span{font:10px "Courier Prime",monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft)}
+#affirm-progress{display:block;width:100%;height:9px;accent-color:var(--orange);margin:0 0 22px}
+.affirm-create{max-width:720px;margin:0 0 22px}
+.affirm-create .note{font-size:12px;color:var(--ink-soft);margin:0}
+.affirm-row input{flex:1}
+.affirm-list{display:flex;flex-direction:column;border-top:1px solid var(--rule)}
+.affirm-entry{display:grid;grid-template-columns:38px minmax(0,1fr);gap:12px;align-items:start;padding:13px 2px;border-bottom:1px solid var(--rule)}
+.affirm-entry-number{font:11px "Courier Prime",monospace;color:var(--orange-2);padding-top:3px}
+.affirm-entry p{margin:0;font-size:15px;line-height:1.6;overflow-wrap:anywhere}
+.affirm-status{min-height:1.5em;margin:14px 0;line-height:1.5}
+@media(max-width:480px){.affirm-heading{align-items:flex-start}.affirm-heading h3{font-size:18px}.affirm-total b{font-size:18px}.affirm-row{flex-wrap:nowrap}.affirm-row .btn{width:auto;margin:0}}
