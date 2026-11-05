@@ -387,3 +387,32 @@ h1,h2,h3{font-family:"Fraunces",Georgia,serif;font-weight:700;margin:0;letter-sp
 .affirm-entry p{margin:0;font-size:15px;line-height:1.6;overflow-wrap:anywhere}
 .affirm-status{min-height:1.5em;margin:14px 0;line-height:1.5}
 @media(max-width:480px){.affirm-heading{align-items:flex-start}.affirm-heading h3{font-size:18px}.affirm-total b{font-size:18px}.affirm-row{flex-wrap:nowrap}.affirm-row .btn{width:auto;margin:0}}
+
+
+/* Affirmation manager + individual repetition practice */
+.affirm-create[hidden],.affirm-session[hidden]{display:none!important}
+#affirm-create-toggle{margin:0 0 18px}
+.affirm-entry{grid-template-columns:30px minmax(0,1fr) auto;align-items:center;gap:12px}
+.affirm-entry-body{min-width:0}
+.affirm-entry-body p{margin:0 0 4px}
+.affirm-entry-body small{font:11px "Courier Prime",monospace;color:var(--ink-soft)}
+.affirm-entry-actions{display:flex;align-items:center;gap:6px}
+.affirm-entry-actions .btn{padding:7px 10px;min-width:0}
+.affirm-entry.is-selected{background:var(--paper-2)}
+.affirm-delete{color:var(--ink-soft)}
+.affirm-session{margin-top:26px;padding:20px;border:1px solid var(--rule);border-radius:6px;background:var(--paper-2)}
+.affirm-session-heading{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.affirm-session-heading>span{font:11px "Courier Prime",monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--orange-2)}
+.affirm-phrase{font-size:1.3rem;line-height:1.55;overflow-wrap:anywhere;margin:18px 0}
+.affirm-session label{display:block}
+.affirm-session .affirm-pad{width:100%;box-sizing:border-box;min-height:120px;height:150px}
+.affirm-session .affirm-footer{margin-top:8px}
+.affirm-empty{padding:18px 2px}
+@media(max-width:560px){
+  .affirm-entry{grid-template-columns:25px minmax(0,1fr);gap:8px}
+  .affirm-entry-actions{grid-column:2;justify-content:flex-start}
+  .affirm-session{padding:15px}
+  .affirm-session-heading{align-items:flex-start}
+  .affirm-session .affirm-footer{flex-wrap:wrap}
+  .affirm-session .affirm-footer progress{min-width:100px}
+}
