@@ -250,16 +250,27 @@
       </div>
       <div id="mode-affirm" hidden>
         <div class="affirm-heading">
-          <div><h3>Minha coleção de afirmações</h3><p class="muted">Escreva uma afirmação por vez. Cada frase entra na sua coleção.</p></div>
-          <div class="affirm-total"><b id="affirm-count" aria-live="polite">0 / 100</b><span>afirmações</span></div>
+          <div><h3>Minhas afirmações</h3><p class="muted">Crie suas frases e escolha qual deseja praticar.</p></div>
+          <div class="affirm-total"><b id="affirm-total-count" aria-live="polite">0 / 100</b><span>na coleção</span></div>
         </div>
-        <progress id="affirm-progress" max="100" value="0" aria-label="Afirmações adicionadas"></progress>
-        <form id="affirm-create" class="affirm-create">
+        <progress id="affirm-collection-progress" max="100" value="0" aria-label="Afirmações criadas"></progress>
+        <button class="btn solid" id="affirm-create-toggle" type="button" aria-expanded="false">+ Criar afirmação</button>
+        <form id="affirm-create" class="affirm-create" hidden>
           <label for="affirm-new">Nova afirmação</label>
-          <div class="affirm-row"><input id="affirm-new" maxlength="280" placeholder="Ex.: Eu gosto de falar em público" autocomplete="off" required><button class="btn solid" id="affirm-add" disabled>Adicionar</button></div>
-          <p class="note">Aperte Enter para salvar e adicionar à lista.</p>
+          <div class="affirm-row"><input id="affirm-new" maxlength="280" placeholder="Ex.: Eu gosto de falar em público" autocomplete="off" required><button class="btn solid" id="affirm-add">Salvar</button></div>
+          <p class="note">Aperte Enter para salvar. Você pode criar até 100 afirmações.</p>
         </form>
         <div id="affirm-list" class="affirm-list" aria-live="polite"><p class="muted">Carregando suas afirmações…</p></div>
+        <section id="affirm-session" class="affirm-session" hidden>
+          <div class="affirm-session-heading"><span>Praticando</span><button class="btn quiet" id="affirm-session-close" type="button">Voltar à lista</button></div>
+          <p id="affirm-phrase" class="affirm-phrase"></p>
+          <label for="affirm-input">Escreva a afirmação exatamente como aparece acima</label>
+          <form id="affirm-send-form">
+            <textarea class="pad affirm-pad" id="affirm-input" maxlength="560" placeholder="Digite sua afirmação. Enter para enviar; Shift + Enter para quebrar a linha." aria-describedby="affirm-help"></textarea>
+            <div class="affirm-footer"><b id="affirm-count" aria-live="polite">0 / 100</b><progress id="affirm-progress" max="100" value="0" aria-label="Repetições concluídas"></progress><button class="btn solid" id="affirm-send">Enviar</button></div>
+          </form>
+          <p class="note" id="affirm-help">Cada afirmação tem seu próprio contador. Ao chegar a 100, você pode continuar praticando ou escolher outra.</p>
+        </section>
         <p id="affirm-status" class="affirm-status" role="status" aria-live="polite"></p>
         <button class="btn quiet" id="affirm-retry" hidden>Tentar carregar novamente</button>
       </div>
