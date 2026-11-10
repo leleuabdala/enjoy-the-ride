@@ -196,7 +196,8 @@ function closeWeek(){
 function newWeek(n){return {n:n,ad:false,adNote:"",ci:{a:"",b:"",c:""},ciDone:false,wrote:0,
  cards:dealCards(n),cardPlan:{},cardDone:{},prized:false,
  dish:"",dishPicked:false,dishDone:false,
- meals:normalizeMeals([]),mealsDone:false,folga:false}}
+ // Carry the previous week's meal plan forward; edits in the new week replace these values.
+ meals:normalizeMeals(S.week&&S.week.meals),mealsDone:false,folga:false}}
 function cardsDone(){return Object.keys(S.week.cardDone||{}).filter(function(k){return S.week.cardDone[k]}).length}
 
 // Saved mission events protect completed days if a stale tab overwrote their summary.
@@ -1033,13 +1034,20 @@ async function loadCloud(user){
   supabase.from("profiles").select("*").eq("user_id",uid).maybeSingle(),
   supabase.from("daily_entries").select("*").eq("user_id",uid).order("entry_date",{ascending:false}).limit(1).maybeSingle(),
   supabase.from("journal_entries").select("*").eq("user_id",uid).order("entry_date",{ascending:false}).limit(1).maybeSingle(),
-  supabase.from("weekly_entries").select("*").eq("user_id",uid).order("week_number",{ascending:false}).limit(1).maybeSingle(),
+  supabase.from("weekly_entries").select("*").eq("user_id",uid).order("week_number",{ascending:false}).limit(2),
   supabase.from("user_progress").select("*").eq("user_id",uid).maybeSingle(),
   supabase.from("purchases").select("*").eq("user_id",uid).order("purchased_at",{ascending:false}).limit(40),
   supabase.from("daily_entries").select("entry_date,day_status,done").eq("user_id",uid).gte("entry_date",shift(t,-120)).order("entry_date",{ascending:true})
  ]);
  var failed=results.find(function(x){return x.error});if(failed)throw failed.error;
- var p=results[0].data,d=results[1].data,j=results[2].data,w=results[3].data,pr=results[4].data,buys=results[5].data||[],days=results[6].data||[];
+ var p=results[0].data,d=results[1].data,j=results[2].data,weeklyRows=results[3].data||[],pr=results[4].data,buys=results[5].data||[],days=results[6].data||[];
+ var targetWeek=Math.floor(diffDays(mondayOf(p&&p.journey_start||S.start),mondayOf(t))/7)+1;
+ var w=weeklyRows.find(function(row){return +row.week_number===targetWeek})||weeklyRows[0]||null;
+ var previousWeek=weeklyRows.find(function(row){return +row.week_number<targetWeek})||null;
+ var savedMeals=normalizeMeals(w&&w.meals);
+ if(!savedMeals.some(function(meal){return meal&&meal.trim()})&&previousWeek){
+  savedMeals=normalizeMeals(previousWeek.meals);
+ }
  var eventRows=[],offset=0;
  while(true){
   var page=await supabase.from("progress_events").select("event_date,attribute_key,xp_delta").eq("user_id",uid).gte("event_date",shift(t,-MAX_CATCHUP-1)).order("created_at",{ascending:true}).order("id",{ascending:true}).range(offset,offset+999);
@@ -1053,7 +1061,7 @@ async function loadCloud(user){
  if(p){remote.start=p.journey_start||remote.start;remote.goal=p.word_goal||750;remote.writeMode=p.write_mode==="pen"?"pen":"key";var pref=p.preferences||{};if(Array.isArray(pref.shop))remote.shop=pref.shop;if(Array.isArray(pref.deck)&&pref.deck.length)remote.deck=pref.deck;remote.unsealed=!!pref.unsealed}
  if(pr){remote.attrs=pr.attrs||remote.attrs;remote.gold=pr.gold||0;remote.streak=pr.current_streak||0;remote.best=pr.best_streak||0;remote.avatar={v:3,marks:pr.avatar_marks||0,points:pr.avatar_points||0,seen:pr.avatar_seen||{},equipped:p?p.equipped_character:-1}}
  if(d){remote.day={date:d.entry_date,done:d.done||{},extra:d.extra||{},bonus:d.bonus||{},bonusNote:d.bonus_notes||{},readAttr:d.read_attr||"men",text:j&&j.text_content||"",counted:!!d.counted,closed:!!d.closed}}
- if(w){remote.week={n:w.week_number,ad:!!w.encounter_done,adNote:w.encounter_note||"",ci:w.checkin||{a:"",b:"",c:""},ciDone:!!w.checkin_done,wrote:w.wrote||0,cards:Array.isArray(w.cards)&&w.cards.length===3?w.cards:dealCards(w.week_number),cardPlan:w.card_plan||{},cardDone:w.card_done||{},prized:!!w.prize_drawn,dish:w.dish||"",dishPicked:!!w.dish_picked,dishDone:!!w.dish_done,meals:normalizeMeals(w.meals),mealsDone:!!w.meals_done,folga:!!w.free_day_used}}
+ if(w){remote.week={n:w.week_number,ad:!!w.encounter_done,adNote:w.encounter_note||"",ci:w.checkin||{a:"",b:"",c:""},ciDone:!!w.checkin_done,wrote:w.wrote||0,cards:Array.isArray(w.cards)&&w.cards.length===3?w.cards:dealCards(w.week_number),cardPlan:w.card_plan||{},cardDone:w.card_done||{},prized:!!w.prize_drawn,dish:w.dish||"",dishPicked:!!w.dish_picked,dishDone:!!w.dish_done,meals:savedMeals,mealsDone:!!w.meals_done,folga:!!w.free_day_used}}
  remote.purchases=buys.map(function(x){return {date:String(x.purchased_at).slice(0,10),name:x.reward_name,cost:x.gold_cost}});
  days.forEach(function(x){if(x.day_status==="free_day")remote.history[x.entry_date]="f";else if(x.day_status==="missed")remote.history[x.entry_date]="x";else{var n=0;ATTRS.forEach(function(a){if((x.done||{})[a.k])n++});remote.history[x.entry_date]=n||undefined}});
  if(!p&&loc){
